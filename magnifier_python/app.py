@@ -4,7 +4,8 @@ Full featured: login, register, Google OAuth, delete account, projects, experime
 """
 
 from dotenv import load_dotenv
-load_dotenv(dotenv_path="/home/u295178/magnifier/magnifier_python/.env")
+from pathlib import Path
+load_dotenv(dotenv_path=Path(__file__).parent / ".env")
 
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, Response
 from werkzeug.middleware.proxy_fix import ProxyFix
