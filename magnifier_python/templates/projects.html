@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+{% block title %}PROJECTS{% endblock %}
+{% block body_class %}page-projects{% endblock %}
+{% block content %}
+
+<div class="vertical-brand right-pos">PROJECTS</div>
+
+<div class="container" style="max-width: 1100px;">
+
+    <!-- Logo inside content -->
+    <a href="{{ url_for('index') }}" style="display:block; text-align:center; margin-bottom:25px;">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="home" class="pulse-white" style="height:80px;">
+    </a>
+
+    <!-- Breadcrumb -->
+    <div style="width:100%; margin-bottom:20px; font-family:'JetBrains Mono'; font-size:0.6rem; color:var(--text-dim);">
+        <a href="{{ url_for('dashboard') }}" style="color:var(--text-dim);text-decoration:none;">DASHBOARD</a>
+        <span style="margin:0 8px; color:var(--glass-border);">/</span>
+        <span style="color:var(--cyan);">PROJECTS</span>
+    </div>
+
+    <header id="main-header" class="show-title" style="margin-bottom: 40px; width:100%; text-align:left;">
+        <div style="display:flex; align-items:center; gap:16px; margin-bottom:10px;">
+            <div style="width:52px;height:52px;border-radius:12px;background:rgba(24,224,255,0.1);border:1px solid var(--cyan);display:flex;align-items:center;justify-content:center; flex-shrink:0; box-shadow: 0 0 20px rgba(24,224,255,0.2);">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>
+                </svg>
+            </div>
+            <div>
+                <div style="font-family:'JetBrains Mono';font-size:0.6rem;color:var(--text-dim);letter-spacing:3px;margin-bottom:4px;">PROJECT REGISTRY</div>
+                <h1 style="font-size:3rem; font-weight:900; letter-spacing:10px; background: linear-gradient(90deg, #fff, var(--cyan)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; line-height:1;">PROJECTS</h1>
+                <p style="color:var(--cyan); font-family:'JetBrains Mono'; font-size:0.65rem; margin-top:6px;">
+                    USER: {{ user_name.upper() }} // TOTAL: {{ projects|length }} PROJECT(S)
+                </p>
+            </div>
+        </div>
+        <div style="height:2px;background:linear-gradient(90deg,var(--cyan),transparent);border-radius:2px;margin-top:10px;"></div>
+    </header>
+
+    <div class="dashboard-content" style="width: 100%;">
+        <div class="auth-card data-table-container" style="max-width: 100%; border-color: rgba(24,224,255,0.3);">
+            <div class="table-header-flex">
+                <h2>PROJECT_REGISTRY</h2>
+                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                    <!-- Search -->
+                    <input id="search-input" type="text" placeholder="SEARCH PROJECTS..." oninput="filterAndPaginate()"
+                        style="background:var(--glass); border:1px solid var(--glass-border); color:var(--text-main);
+                        font-family:'JetBrains Mono'; font-size:0.65rem; padding:8px 14px; border-radius:6px;
+                        outline:none; width:200px;">
+                    <a href="{{ url_for('new_project') }}" class="mini-btn" style="background: var(--glass); border: 1px solid var(--cyan); color: var(--cyan); padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.65rem; font-family: 'JetBrains Mono'; text-decoration: none;">
+                        + INITIALIZE PROJECT
+                    </a>
+                </div>
+            </div>
+
+            {% if projects %}
+            <table class="terminal-table" id="projects-table">
+                <thead>
+                    <tr style="color: var(--cyan);">
+                        <th>Name</th>
+                        <th>Description</th>
+                        <th>Experiments</th>
+                        <th>Last Updated</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="projects-tbody">
+                    {% for p in projects %}
+                    <tr class="project-row">
+                        <td style="color: #fff; font-weight: 700;">{{ p.name }}</td>
+                        <td style="color: var(--text-dim); font-size: 0.7rem;">{{ p.description or '—' }}</td>
+                        <td style="color: var(--green); font-weight: 600; font-family: 'JetBrains Mono';">{{ p.experiment_count }}</td>
+                        <td style="color: var(--text-dim); font-family: 'JetBrains Mono'; font-size: 0.65rem;">
+                            {{ p.updated_at[:10] if p.updated_at else p.created_at[:10] if p.created_at else '—' }}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('project_detail', project_id=p.id) }}" class="action-link" style="color: var(--cyan); margin-right: 12px;">[ OPEN ]</a>
+                            <button onclick="confirmDelete({{ p.id }}, '{{ p.name }}')" style="background:none;border:none;color:var(--alert-red);cursor:pointer;font-family:'JetBrains Mono';font-size:0.7rem;">[ DELETE ]</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <!-- No results row -->
+            <div id="no-results" style="display:none; text-align:center; padding:30px; color:var(--text-dim); font-family:'JetBrains Mono'; font-size:0.7rem;">
+                NO PROJECTS MATCH YOUR SEARCH
+            </div>
+
+            <!-- Pagination -->
+            <div id="pagination" style="display:flex; justify-content:center; align-items:center; gap:8px; margin-top:20px; font-family:'JetBrains Mono'; font-size:0.65rem;">
+            </div>
+            {% else %}
+            <div style="text-align: center; padding: 60px; color: var(--text-dim); font-family: 'JetBrains Mono';">
+                <p style="font-size: 0.8rem; margin-bottom: 20px;">NO PROJECTS INITIALIZED</p>
+                <a href="{{ url_for('new_project') }}" class="core-btn" style="width: 250px; margin: 0 auto;">+ CREATE FIRST PROJECT</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div style="margin-top: 30px; text-align: center;">
+        <a href="{{ url_for('dashboard') }}" class="core-btn secondary" style="width: 200px; margin: 0 auto;">← BACK TO DASHBOARD</a>
+    </div>
+
+    <!-- Delete modal -->
+    <div id="delete-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:9999;align-items:center;justify-content:center;">
+        <div class="auth-card" style="max-width:420px;border-color:var(--alert-red);text-align:center;">
+            <h2 style="color:var(--alert-red);margin-bottom:15px;">⚠ CONFIRM DELETE</h2>
+            <p style="font-family:'JetBrains Mono';font-size:0.65rem;color:var(--text-dim);line-height:1.8;margin-bottom:25px;">
+                DELETE PROJECT <span id="modal-project-name" style="color:#fff;font-weight:bold;"></span>?<br>
+                THIS WILL DELETE ALL EXPERIMENTS INSIDE IT.<br>
+                THIS CANNOT BE UNDONE.
+            </p>
+            <div style="display:flex;gap:15px;justify-content:center;">
+                <button onclick="hideDeleteModal()" class="core-btn secondary" style="width:160px;">CANCEL</button>
+                <form id="delete-form" method="POST" style="margin:0;">
+                    <button type="submit" class="core-btn" style="width:160px;background:transparent;border:1px solid var(--alert-red);color:var(--alert-red);">YES, DELETE</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const PAGE_SIZE = 10;
+let currentPage = 1;
+
+function filterAndPaginate() {
+    const query = document.getElementById('search-input').value.toLowerCase();
+    const rows = Array.from(document.querySelectorAll('.project-row'));
+    const filtered = rows.filter(row => {
+        const name = row.cells[0].textContent.toLowerCase();
+        const desc = row.cells[1].textContent.toLowerCase();
+        return name.includes(query) || desc.includes(query);
+    });
+
+    // Hide all rows first
+    rows.forEach(r => r.style.display = 'none');
+
+    // Pagination
+    const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+    currentPage = Math.min(currentPage, totalPages);
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const paginated = filtered.slice(start, start + PAGE_SIZE);
+    paginated.forEach(r => r.style.display = '');
+
+    // No results
+    document.getElementById('no-results').style.display = filtered.length === 0 ? 'block' : 'none';
+
+    // Render pagination buttons
+    const pg = document.getElementById('pagination');
+    pg.innerHTML = '';
+    if (totalPages > 1) {
+        const btnStyle = (active) => `cursor:pointer; padding:6px 12px; border-radius:4px; font-family:'JetBrains Mono'; font-size:0.6rem; border:1px solid ${active ? 'var(--cyan)' : 'var(--glass-border)'}; background:${active ? 'rgba(24,224,255,0.1)' : 'var(--glass)'}; color:${active ? 'var(--cyan)' : 'var(--text-dim)'};`;
+        for (let i = 1; i <= totalPages; i++) {
+            const btn = document.createElement('button');
+            btn.textContent = String(i).padStart(2, '0');
+            btn.style.cssText = btnStyle(i === currentPage);
+            btn.onclick = () => { currentPage = i; filterAndPaginate(); };
+            pg.appendChild(btn);
+        }
+        const info = document.createElement('span');
+        info.style.cssText = 'color:var(--text-dim); font-size:0.6rem; margin-left:8px;';
+        info.textContent = `${filtered.length} TOTAL`;
+        pg.appendChild(info);
+    }
+}
+
+// Init on load
+filterAndPaginate();
+
+function confirmDelete(projectId, projectName) {
+    document.getElementById('modal-project-name').textContent = projectName.toUpperCase();
+    document.getElementById('delete-form').action = `{{ PREFIX }}/projects/${projectId}/delete`;
+    document.getElementById('delete-modal').style.display = 'flex';
+}
+function hideDeleteModal() {
+    document.getElementById('delete-modal').style.display = 'none';
+}
+document.getElementById('delete-modal').addEventListener('click', function(e) {
+    if (e.target === this) hideDeleteModal();
+});
+</script>
+{% endblock %}

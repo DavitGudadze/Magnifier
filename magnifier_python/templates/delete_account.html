@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container">
+    <div class="auth-card" style="border-color:var(--alert-red);max-width:500px;">
+        <h2 style="color:var(--alert-red);">⚠ DELETE ACCOUNT</h2>
+        <p style="color:var(--text-dim);font-family:'JetBrains Mono';font-size:0.7rem;margin:20px 0;line-height:1.6;">
+            WARNING: THIS WILL PERMANENTLY DELETE YOUR ACCOUNT AND ALL ASSOCIATED PROJECTS AND EXPERIMENTS. THIS CANNOT BE UNDONE.
+        </p>
+        {% if error %}
+        <div style="color:var(--alert-red);font-size:0.65rem;margin:15px 0;font-family:'JetBrains Mono';">⚠️ {{ error }}</div>
+        {% endif %}
+        <form method="POST" onsubmit="return validateDelete()">
+            <div class="input-group">
+                <label style="color:var(--alert-red);">Type DELETE to confirm</label>
+                <input type="text" id="confirm-input" name="confirm_word" 
+                       autocomplete="off" placeholder="DELETE"
+                       oninput="this.value = this.value.toUpperCase()"
+                       style="border-color:var(--alert-red);letter-spacing:3px;text-transform:uppercase;">
+            </div>
+            <button type="submit" id="delete-btn" class="core-btn" 
+                    style="background:transparent;border:1px solid var(--alert-red);color:var(--alert-red);opacity:0.4;cursor:not-allowed;"
+                    disabled>
+                PERMANENTLY DELETE ACCOUNT
+            </button>
+        </form>
+        <div style="margin-top:20px;">
+            <a href="{{ url_for('dashboard') }}" style="color:var(--text-dim);font-size:0.75rem;text-decoration:none;">← CANCEL, GO BACK</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const input = document.getElementById('confirm-input');
+const btn = document.getElementById('delete-btn');
+input.addEventListener('input', () => {
+    const ok = input.value.trim().toUpperCase() === 'DELETE';
+    btn.disabled = !ok;
+    btn.style.opacity = ok ? '1' : '0.4';
+    btn.style.cursor = ok ? 'pointer' : 'not-allowed';
+});
+function validateDelete() {
+    if (input.value.trim().toUpperCase() !== 'DELETE') {
+        input.style.borderColor = 'var(--alert-red)';
+        return false;
+    }
+    return true;
+}
+</script>
+{% endblock %}

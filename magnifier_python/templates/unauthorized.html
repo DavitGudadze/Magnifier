@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container">
+    <div class="auth-card" style="border-color: var(--alert-red);">
+        <h2 style="color: var(--alert-red);">⚠ ACCESS DENIED</h2>
+        <p style="color: var(--text-dim); font-family: 'JetBrains Mono'; font-size: 0.7rem; margin-top: 20px;">
+            CRITICAL: LEVEL 4 CLEARANCE REQUIRED<br>
+            YOU MUST BE AUTHORIZED TO ACCESS THIS TERMINAL
+        </p>
+        <div style="margin-top: 30px; display: flex; flex-direction: column; gap: 12px;">
+            <a href="{{ url_for('login') }}" class="core-btn">LOGIN TO TERMINAL</a>
+            <a href="{{ url_for('register') }}" class="core-btn secondary">INITIALIZE PROFILE</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

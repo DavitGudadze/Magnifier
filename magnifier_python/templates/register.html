@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="vertical-brand left-pos">MAGNIFIER</div>
+<div class="container">
+    <a href="{{ url_for('index') }}" style="display:block;margin-bottom:30px;">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="MAGNIFIER" style="width:200px;height:auto;display:block;margin:0 auto;">
+    </a>
+    <div class="auth-card">
+        <h2>INITIALIZE CLEARANCE</h2>
+
+        {% if error %}
+        <div style="color:var(--alert-red);font-size:0.65rem;margin:15px 0;font-family:'JetBrains Mono';">⚠️ {{ error }}</div>
+        {% endif %}
+
+        <!-- Google OAuth Button -->
+        <a href="{{ url_for('google_login') }}" style="display:flex;align-items:center;justify-content:center;gap:12px;width:100%;padding:14px;background:rgba(255,255,255,0.05);border:1px solid var(--glass-border);border-radius:8px;color:var(--text-main);text-decoration:none;font-family:'JetBrains Mono';font-size:0.75rem;letter-spacing:2px;margin-bottom:24px;transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
+            <svg width="20" height="20" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            SIGN UP WITH GOOGLE
+        </a>
+
+        <div style="display:flex;align-items:center;gap:15px;margin-bottom:24px;">
+            <div style="flex:1;height:1px;background:var(--glass-border);"></div>
+            <span style="color:var(--text-dim);font-family:'JetBrains Mono';font-size:0.6rem;">OR REGISTER MANUALLY</span>
+            <div style="flex:1;height:1px;background:var(--glass-border);"></div>
+        </div>
+
+        <form method="POST">
+            <div class="input-group">
+                <label>Full Name</label>
+                <input type="text" name="full_name" placeholder="e.g. Doctor Frankenstein">
+            </div>
+            <div class="input-group">
+                <label>Username</label>
+                <input type="text" name="username" required placeholder="e.g. Dr.Frankenstein">
+            </div>
+            <div class="input-group">
+                <label>Email</label>
+                <input type="email" name="email" required placeholder="e.g. Dr.Frankenstein@example.com">
+            </div>
+            <div class="input-group">
+                <label>Access Key (Password)</label>
+                <div style="position:relative;">
+                    <input type="password" id="p1" name="password" required autocomplete="new-password">
+                    <button type="button" class="password-toggle" onclick="togglePw('p1',this)">
+                        <svg class="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="strength-meter"><div id="s-bar" class="strength-bar"></div></div>
+                <div style="margin-top:10px;font-family:'JetBrains Mono';font-size:0.6rem;">
+                    <p id="req-len" style="color:var(--text-dim);margin-bottom:4px;">[○] MIN 8 CHARACTERS</p>
+                    <p id="req-cap" style="color:var(--text-dim);margin-bottom:4px;">[○] UPPERCASE REQUIRED</p>
+                    <p id="req-num" style="color:var(--text-dim);margin-bottom:4px;">[○] NUMBER REQUIRED</p>
+                    <p id="req-sym" style="color:var(--text-dim);margin-bottom:4px;">[○] SYMBOL REQUIRED (!@#$%^&* etc)</p>
+                </div>
+            </div>
+            <div class="input-group">
+                <label>Confirm Key</label>
+                <div style="position:relative;">
+                    <input type="password" id="p2" name="confirm" required autocomplete="new-password">
+                    <button type="button" class="password-toggle" onclick="togglePw('p2',this)">
+                        <svg class="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                        </svg>
+                    </button>
+                </div>
+                <div id="match-msg" style="font-size:0.55rem;margin-top:8px;font-family:'JetBrains Mono';min-height:15px;"></div>
+            </div>
+            <button type="submit" class="core-btn">Initialize Clearance →</button>
+        </form>
+
+        <p style="margin-top:30px;font-size:0.8rem;color:var(--text-dim);">
+            ALREADY AUTHORIZED? <a href="{{ url_for('login') }}" style="color:var(--cyan);text-decoration:none;">LOGIN HERE</a>
+        </p>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const p1 = document.getElementById('p1'), p2 = document.getElementById('p2');
+const bar = document.getElementById('s-bar'), matchMsg = document.getElementById('match-msg');
+const reqs = {
+    len: { el: document.getElementById('req-len'), re: /.{8,}/ },
+    cap: { el: document.getElementById('req-cap'), re: /[A-Z]/ },
+    num: { el: document.getElementById('req-num'), re: /[0-9]/ },
+    sym: { el: document.getElementById('req-sym'), re: /[!@#$%^&*()\-_=+\[\]{};:'",.<>?/\\|`~]/ }
+};
+p1.addEventListener('input', () => {
+    let score = 0;
+    const total = Object.keys(reqs).length;
+    for (const k in reqs) {
+        const ok = reqs[k].re.test(p1.value);
+        reqs[k].el.style.color = ok ? 'var(--green)' : 'var(--text-dim)';
+        reqs[k].el.style.fontWeight = '';
+        reqs[k].el.textContent = reqs[k].el.textContent.replace(/\[.\]/, ok ? '[✔]' : '[○]');
+        if (ok) score++;
+    }
+    bar.style.width = (score / total * 100) + '%';
+    bar.style.background = score === total ? 'var(--green)' : 'var(--alert-red)';
+    if (p2.value) checkMatch();
+});
+p2.addEventListener('input', checkMatch);
+function checkMatch() {
+    if (!p2.value) { matchMsg.textContent = ''; return; }
+    const ok = p1.value === p2.value;
+    matchMsg.textContent = ok ? 'KEYS MATCH ✔' : 'KEYS MISMATCH ✗';
+    matchMsg.style.color = ok ? 'var(--green)' : 'var(--alert-red)';
+    p2.style.borderColor = ok ? 'var(--green)' : 'var(--alert-red)';
+}
+function togglePw(id, btn) {
+    const el = document.getElementById(id);
+    el.type = el.type === 'password' ? 'text' : 'password';
+    btn.classList.toggle('active');
+}
+document.querySelector('form').addEventListener('submit', function(e) {
+    for (const k in reqs) {
+        if (!reqs[k].re.test(p1.value)) {
+            e.preventDefault();
+            reqs[k].el.style.color = 'var(--alert-red)';
+            reqs[k].el.style.fontWeight = 'bold';
+            return;
+        }
+    }
+    if (p1.value !== p2.value) {
+        e.preventDefault();
+        return;
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% block title %}PROFILE{% endblock %}
+{% block content %}
+<div class="container" style="max-width: 600px;">
+    <header id="main-header" class="show-title" style="margin-bottom: 40px;">
+        <h1 style="font-size: 2rem; letter-spacing: 6px;">PROFILE</h1>
+        <p style="color: var(--text-dim); font-family: 'JetBrains Mono'; font-size: 0.65rem; margin-top: 8px;">
+            USER: {{ username.upper() }}
+        </p>
+    </header>
+
+    <div class="auth-card" style="max-width: 100%;">
+        <h2 style="margin-bottom: 25px; font-size: 1rem;">CHANGE_ACCESS_KEY</h2>
+
+        {% if error %}
+        <div style="color:var(--alert-red);font-size:0.65rem;margin-bottom:20px;font-family:'JetBrains Mono';">⚠️ {{ error }}</div>
+        {% endif %}
+        {% if success %}
+        <div style="color:var(--green);font-size:0.65rem;margin-bottom:20px;font-family:'JetBrains Mono';">✓ {{ success }}</div>
+        {% endif %}
+
+        <form method="POST">
+            {% if is_google %}
+            <div style="font-family:'JetBrains Mono';font-size:0.65rem;color:var(--cyan);margin-bottom:20px;padding:14px 16px;border:1px solid var(--cyan);border-radius:4px;line-height:1.8;">
+                🔑 GOOGLE ACCOUNT — Set a password to also enable direct login.<br>
+                <span style="color:var(--text-dim);">Your username for direct login will be:</span>
+                <span style="color:#fff;font-weight:700;letter-spacing:1px;background:rgba(24,224,255,0.08);padding:2px 8px;border-radius:4px;margin-left:4px;">{{ username }}</span>
+            </div>
+            {% else %}
+            <div class="input-group">
+                <label>Current Access Key</label>
+                <div style="position:relative;">
+                    <input type="password" id="cur" name="current_password" required autocomplete="current-password">
+                    <button type="button" class="password-toggle" onclick="togglePw('cur',this)">
+                        <svg class="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="input-group">
+                <label>New Access Key</label>
+                <div style="position:relative;">
+                    <input type="password" id="p1" name="new_password" required autocomplete="new-password">
+                    <button type="button" class="password-toggle" onclick="togglePw('p1',this)">
+                        <svg class="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                        </svg>
+                    </button>
+                </div>
+                <div style="margin-top:8px;font-family:'JetBrains Mono';font-size:0.6rem;">
+                    <p id="req-len" style="color:var(--text-dim);margin-bottom:3px;">[○] MIN 8 CHARACTERS</p>
+                    <p id="req-cap" style="color:var(--text-dim);margin-bottom:3px;">[○] UPPERCASE REQUIRED</p>
+                    <p id="req-num" style="color:var(--text-dim);margin-bottom:3px;">[○] NUMBER REQUIRED</p>
+                    <p id="req-sym" style="color:var(--text-dim);margin-bottom:3px;">[○] SYMBOL REQUIRED</p>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>Confirm New Key</label>
+                <div style="position:relative;">
+                    <input type="password" id="p2" name="confirm_password" required autocomplete="new-password">
+                    <button type="button" class="password-toggle" onclick="togglePw('p2',this)">
+                        <svg class="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                        </svg>
+                    </button>
+                </div>
+                <div id="match-msg" style="font-size:0.55rem;margin-top:6px;font-family:'JetBrains Mono';min-height:14px;"></div>
+            </div>
+
+            <button type="submit" class="core-btn">UPDATE ACCESS KEY →</button>
+        </form>
+    </div>
+
+    <div style="display:flex;gap:20px;margin-top:25px;justify-content:center;flex-wrap:wrap;">
+        <a href="{{ url_for('dashboard') }}" class="core-btn secondary" style="width:220px;">← BACK TO DASHBOARD</a>
+        <a href="{{ url_for('delete_account') }}" class="core-btn" style="width:220px;background:transparent;border:1px solid var(--alert-red);color:var(--alert-red);">DELETE ACCOUNT</a>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const p1 = document.getElementById('p1'), p2 = document.getElementById('p2');
+const reqs = {
+    len: { el: document.getElementById('req-len'), re: /.{8,}/ },
+    cap: { el: document.getElementById('req-cap'), re: /[A-Z]/ },
+    num: { el: document.getElementById('req-num'), re: /[0-9]/ },
+    sym: { el: document.getElementById('req-sym'), re: /[!@#$%^&*()\-_=+\[\]{};:'",.<>?\/\\|`~]/ }
+};
+p1.addEventListener('input', () => {
+    for (const k in reqs) {
+        const ok = reqs[k].re.test(p1.value);
+        reqs[k].el.style.color = ok ? 'var(--green)' : 'var(--text-dim)';
+        reqs[k].el.textContent = reqs[k].el.textContent.replace(/\[.\]/, ok ? '[✔]' : '[○]');
+    }
+    if (p2.value) checkMatch();
+});
+p2.addEventListener('input', checkMatch);
+function checkMatch() {
+    const msg = document.getElementById('match-msg');
+    if (!p2.value) { msg.textContent = ''; return; }
+    const ok = p1.value === p2.value;
+    msg.textContent = ok ? 'KEYS MATCH ✔' : 'KEYS MISMATCH ✗';
+    msg.style.color = ok ? 'var(--green)' : 'var(--alert-red)';
+}
+function togglePw(id, btn) {
+    const el = document.getElementById(id);
+    el.type = el.type === 'password' ? 'text' : 'password';
+    btn.classList.toggle('active');
+}
+</script>
+{% endblock %}

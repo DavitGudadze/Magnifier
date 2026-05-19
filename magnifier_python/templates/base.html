@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}MAGNIFIER{% endblock %} | CORE</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body class="{% block body_class %}{% endblock %}">
+
+<div class="system-status-bar">
+    <div>SYSTEM: <span style="color: var(--green);">ACTIVE</span></div>
+    <div>TIMESTAMP: <span id="clock">--:--:--</span></div>
+    <div>
+        {% if session.get('authorized') %}
+            <a href="{{ url_for('logout') }}" style="color: var(--alert-red); text-decoration: none;">[ LOG OUT ]</a>
+        {% else %}
+            <span style="color: var(--text-dim);">UNAUTHORIZED ACCESS</span>
+        {% endif %}
+    </div>
+</div>
+
+{% if not backend_online %}
+<div style="background:rgba(255,75,75,0.15); border-bottom:1px solid var(--alert-red);
+     color:var(--alert-red); text-align:center; padding:8px 20px;
+     font-family:'JetBrains Mono'; font-size:0.6rem; letter-spacing:1px;
+     position:fixed; top:40px; width:100%; z-index:9998;">
+    ⚠ BACKEND UNREACHABLE — OPERATING IN DEGRADED MODE
+</div>
+{% endif %}
+
+{% set hide_header = request.endpoint in ['login', 'register', 'projects', 'project_detail', 'experiment_detail', 'dashboard', 'profile'] %}
+{% if not hide_header %}
+<header id="main-header">
+    <div class="container" style="padding-top: 60px; padding-bottom: 0;">
+        <a href="{{ url_for('index') }}">
+            <img src="{{ url_for('static', filename='logo.png') }}" id="main-logo" class="logo-img" alt="MAGNIFIER">
+        </a>
+        <h1>MAGNIFIER</h1>
+    </div>
+</header>
+{% endif %}
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div id="flash-container" style="position:fixed;top:60px;right:20px;z-index:9999;max-width:350px;">
+    {% for category, msg in messages %}
+    <div class="flash-msg" style="
+        background:{% if category == 'success' %}rgba(74,222,128,0.15){% else %}rgba(255,75,75,0.15){% endif %};
+        border:1px solid {% if category == 'success' %}var(--green){% else %}var(--alert-red){% endif %};
+        color:{% if category == 'success' %}var(--green){% else %}var(--alert-red){% endif %};
+        padding:12px 20px;border-radius:8px;font-family:'JetBrains Mono';font-size:0.65rem;margin-bottom:10px;transition:opacity 0.5s;">
+        {% if category == 'success' %}✓{% else %}⚠️{% endif %} {{ msg }}
+    </div>
+    {% endfor %}
+</div>
+<script>
+    setTimeout(() => {
+        document.querySelectorAll('.flash-msg').forEach(el => {
+            el.style.opacity = '0';
+            setTimeout(() => el.remove(), 500);
+        });
+    }, 4000);
+</script>
+{% endif %}
+{% endwith %}
+
+{% block content %}{% endblock %}
+
+<footer style="text-align: center; margin-top: 80px; padding-bottom: 40px; color: var(--text-dim); font-family: 'JetBrains Mono'; font-size: 0.7rem; opacity: 0.6;">
+    <div style="border-top: 1px solid var(--glass-border); width: 100px; margin: 20px auto;"></div>
+    MAGNIFIER DATA CORE // v2.0.0 [PYTHON]
+</footer>
+
+<script>
+    // Live clock
+    function updateClock() {
+        const now = new Date();
+        document.getElementById('clock').textContent =
+            now.toTimeString().slice(0,8);
+    }
+    updateClock(); setInterval(updateClock, 1000);
+
+    // Page reveal animation
+    window.addEventListener('DOMContentLoaded', () => {
+        const loader = document.getElementById('loader-wrapper');
+        const revealContent = () => {
+            document.body.classList.add('system-ready');
+            const h = document.getElementById('main-header');
+            const l = document.getElementById('main-logo');
+            if (h) h.classList.add('show-title');
+            if (l) l.classList.add('pulse-white');
+        };
+        if (loader) {
+            window.addEventListener('load', () => {
+                setTimeout(() => {
+                    loader.classList.add('fade-out');
+                    setTimeout(() => { loader.style.display = 'none'; revealContent(); }, 800);
+                }, 1200);
+            });
+        } else { revealContent(); }
+    });
+</script>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

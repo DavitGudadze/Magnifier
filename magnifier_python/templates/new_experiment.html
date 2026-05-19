@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container">
+    <div class="auth-card" style="max-width: 560px; border-color: rgba(182,120,255,0.4);">
+        <h2 style="background: linear-gradient(90deg, #fff, var(--cyan)); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">NEW EXPERIMENT</h2>
+        {% if error %}
+        <div style="color: var(--alert-red); font-size: 0.65rem; margin: 15px 0;">⚠️ {{ error }}</div>
+        {% endif %}
+        <form method="POST" action="{{ url_for('new_experiment', project_id=project_id) }}">
+            <div class="input-group">
+                <label style="color: var(--cyan);">Experiment Name</label>
+                <input type="text" name="name" required placeholder="e.g. Sample A Analysis"
+                    style="border-color: rgba(182,120,255,0.4);"
+                    onfocus="this.style.borderColor='var(--cyan)'; this.style.boxShadow='0 0 0 3px rgba(24,224,255,0.15)';"
+                    onblur="this.style.borderColor='rgba(182,120,255,0.4)'; this.style.boxShadow='none';">
+            </div>
+            <div class="input-group">
+                <label style="color: var(--cyan);">Description</label>
+                <input type="text" name="description" placeholder="Short description (optional)"
+                    style="border-color: rgba(182,120,255,0.4);"
+                    onfocus="this.style.borderColor='var(--cyan)'; this.style.boxShadow='0 0 0 3px rgba(24,224,255,0.15)';"
+                    onblur="this.style.borderColor='rgba(182,120,255,0.4)'; this.style.boxShadow='none';">
+            </div>
+            <button type="submit" class="core-btn secondary">CREATE EXPERIMENT →</button>
+        </form>
+        <div style="margin-top: 20px;">
+            <a href="{{ url_for('project_detail', project_id=project_id) }}" style="color: var(--text-dim); font-size: 0.75rem; text-decoration: none;">← BACK TO PROJECT</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

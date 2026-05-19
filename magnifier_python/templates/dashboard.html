@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+{% block body_class %}page-dashboard{% endblock %}
+{% block content %}
+<div class="container" style="max-width: 900px;">
+
+    <!-- Logo -->
+    <div style="text-align:center; margin-bottom: 50px;">
+        <a href="{{ url_for('index') }}" style="display:block;"><img src="{{ url_for('static', filename='logo.png') }}" class="logo-img pulse-white" alt="MAGNIFIER" style="margin-bottom:20px;"></a>
+        <h1 style="font-size:2.5rem; font-weight:900; letter-spacing:10px; background:linear-gradient(90deg,#fff,var(--cyan)); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">DASHBOARD</h1>
+        <p style="font-family:'JetBrains Mono'; font-size:0.65rem; color:var(--cyan); margin-top:8px; letter-spacing:2px;">
+            SYSTEM ACCESS: AUTHORIZED // SESSION: ACTIVE
+        </p>
+    </div>
+
+    <!-- Profile Card -->
+    <div class="auth-card" style="max-width:100%; margin-bottom:30px; padding:30px 35px; border-color:rgba(24,224,255,0.2);">
+        <div style="display:flex; align-items:center; gap:24px; flex-wrap:wrap;">
+
+            <!-- Avatar -->
+            <div style="width:64px; height:64px; border-radius:50%; background:linear-gradient(135deg,rgba(24,224,255,0.2),rgba(182,120,255,0.2)); border:2px solid var(--cyan); display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow:0 0 24px rgba(24,224,255,0.15);">
+                <span style="font-size:1.6rem; font-weight:900; color:var(--cyan); font-family:'JetBrains Mono';">{{ user_name[0].upper() }}</span>
+            </div>
+
+            <!-- Info -->
+            <div style="flex:1; min-width:200px;">
+                <div style="font-family:'JetBrains Mono'; font-size:0.55rem; color:var(--text-dim); letter-spacing:3px; margin-bottom:6px;">OPERATOR PROFILE</div>
+                <div style="font-size:1.4rem; font-weight:800; color:#fff; letter-spacing:3px; margin-bottom:4px;">{{ user_name.upper() }}</div>
+                <div style="font-family:'JetBrains Mono'; font-size:0.65rem; color:var(--text-dim);">{{ user_email }}</div>
+            </div>
+
+            <!-- Account type badge -->
+            <div style="flex-shrink:0;">
+                {% if is_google_user %}
+                <div style="font-family:'JetBrains Mono'; font-size:0.6rem; padding:6px 14px; border-radius:20px; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); color:var(--text-dim); letter-spacing:1px;">
+                    ⚡ GOOGLE AUTH
+                </div>
+                {% else %}
+                <div style="font-family:'JetBrains Mono'; font-size:0.6rem; padding:6px 14px; border-radius:20px; background:rgba(24,224,255,0.05); border:1px solid rgba(24,224,255,0.3); color:var(--cyan); letter-spacing:1px;">
+                    ⚡ STANDARD AUTH
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:30px;">
+
+        <div class="stat-card" style="text-align:center; padding:28px 20px;">
+            <div style="font-family:'JetBrains Mono'; font-size:0.55rem; color:var(--text-dim); letter-spacing:3px; margin-bottom:12px;">PROJECTS</div>
+            <div style="font-size:2.8rem; font-weight:900; color:var(--cyan); font-family:'JetBrains Mono'; line-height:1;">{{ "%02d"|format(total_projects) }}</div>
+            <div style="font-family:'JetBrains Mono'; font-size:0.55rem; color:var(--text-dim); margin-top:10px;">WORKSPACES</div>
+        </div>
+
+        <div class="stat-card" style="text-align:center; padding:28px 20px;">
+            <div style="font-family:'JetBrains Mono'; font-size:0.55rem; color:var(--text-dim); letter-spacing:3px; margin-bottom:12px;">EXPERIMENTS</div>
+            <div style="font-size:2.8rem; font-weight:900; color:var(--purple); font-family:'JetBrains Mono'; line-height:1;">{{ "%02d"|format(total_experiments) }}</div>
+            <div style="font-family:'JetBrains Mono'; font-size:0.55rem; color:var(--text-dim); margin-top:10px;">TOTAL RUNS</div>
+        </div>
+
+        <div class="stat-card" style="text-align:center; padding:28px 20px;">
+            <div style="font-family:'JetBrains Mono'; font-size:0.55rem; color:var(--text-dim); letter-spacing:3px; margin-bottom:12px;">COMPLETED</div>
+            <div style="font-size:2.8rem; font-weight:900; color:var(--green); font-family:'JetBrains Mono'; line-height:1;">{{ "%02d"|format(completed_experiments) }}</div>
+            <div style="font-family:'JetBrains Mono'; font-size:0.55rem; color:var(--text-dim); margin-top:10px;">PIPELINES</div>
+        </div>
+
+    </div>
+
+    <!-- Running indicator -->
+    {% if running_experiments > 0 %}
+    <div style="background:rgba(182,120,255,0.08); border:1px solid rgba(182,120,255,0.3); border-radius:12px; padding:14px 20px; margin-bottom:30px; display:flex; align-items:center; gap:12px; font-family:'JetBrains Mono'; font-size:0.65rem; color:var(--purple);">
+        <span style="width:8px;height:8px;border-radius:50%;background:var(--purple);display:inline-block;animation:pulse-dot 1s infinite;flex-shrink:0;"></span>
+        {{ running_experiments }} PIPELINE{{ 's' if running_experiments > 1 else '' }} CURRENTLY RUNNING — <a href="{{ url_for('projects') }}" style="color:var(--cyan); margin-left:4px;">VIEW STATUS →</a>
+    </div>
+    {% endif %}
+
+    <!-- Quick actions -->
+    <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:16px; margin-bottom:30px;">
+
+        <a href="{{ url_for('new_project') }}" style="text-decoration:none;">
+            <div class="auth-card" style="max-width:100%; padding:24px 28px; border-color:rgba(24,224,255,0.2); cursor:pointer; transition:all 0.2s; display:flex; align-items:center; gap:16px;"
+                onmouseover="this.style.borderColor='var(--cyan)'; this.style.background='rgba(24,224,255,0.05)'"
+                onmouseout="this.style.borderColor='rgba(24,224,255,0.2)'; this.style.background=''">
+                <div style="width:40px;height:40px;border-radius:10px;background:rgba(24,224,255,0.1);border:1px solid rgba(24,224,255,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                </div>
+                <div>
+                    <div style="font-family:'JetBrains Mono'; font-size:0.6rem; color:var(--text-dim); letter-spacing:2px; margin-bottom:4px;">ACTION</div>
+                    <div style="font-weight:700; color:var(--cyan); letter-spacing:2px; font-size:0.9rem;">NEW PROJECT</div>
+                </div>
+            </div>
+        </a>
+
+        <a href="{{ url_for('projects') }}" style="text-decoration:none;">
+            <div class="auth-card" style="max-width:100%; padding:24px 28px; border-color:rgba(24,224,255,0.2); cursor:pointer; transition:all 0.2s; display:flex; align-items:center; gap:16px;"
+                onmouseover="this.style.borderColor='var(--cyan)'; this.style.background='rgba(24,224,255,0.05)'"
+                onmouseout="this.style.borderColor='rgba(24,224,255,0.2)'; this.style.background=''">
+                <div style="width:40px;height:40px;border-radius:10px;background:rgba(24,224,255,0.1);border:1px solid rgba(24,224,255,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+                </div>
+                <div>
+                    <div style="font-family:'JetBrains Mono'; font-size:0.6rem; color:var(--text-dim); letter-spacing:2px; margin-bottom:4px;">NAVIGATE</div>
+                    <div style="font-weight:700; color:var(--cyan); letter-spacing:2px; font-size:0.9rem;">ALL PROJECTS</div>
+                </div>
+            </div>
+        </a>
+
+        <a href="{{ url_for('profile') }}" style="text-decoration:none;">
+            <div class="auth-card" style="max-width:100%; padding:24px 28px; border-color:rgba(182,120,255,0.2); cursor:pointer; transition:all 0.2s; display:flex; align-items:center; gap:16px;"
+                onmouseover="this.style.borderColor='var(--cyan)'; this.style.background='rgba(24,224,255,0.05)'"
+                onmouseout="this.style.borderColor='rgba(24,224,255,0.2)'; this.style.background=''">
+                <div style="width:40px;height:40px;border-radius:10px;background:rgba(24,224,255,0.1);border:1px solid rgba(24,224,255,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </div>
+                <div>
+                    <div style="font-family:'JetBrains Mono'; font-size:0.6rem; color:var(--text-dim); letter-spacing:2px; margin-bottom:4px;">SETTINGS</div>
+                    <div style="font-weight:700; color:var(--cyan); letter-spacing:2px; font-size:0.9rem;">PROFILE</div>
+                </div>
+            </div>
+        </a>
+
+        <a href="{{ url_for('logout') }}" style="text-decoration:none;">
+            <div class="auth-card" style="max-width:100%; padding:24px 28px; border-color:rgba(255,255,255,0.08); cursor:pointer; transition:all 0.2s; display:flex; align-items:center; gap:16px;"
+                onmouseover="this.style.borderColor='var(--text-dim)'; this.style.background='rgba(255,255,255,0.03)'"
+                onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'; this.style.background=''">
+                <div style="width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                </div>
+                <div>
+                    <div style="font-family:'JetBrains Mono'; font-size:0.6rem; color:var(--text-dim); letter-spacing:2px; margin-bottom:4px;">SESSION</div>
+                    <div style="font-weight:700; color:var(--text-dim); letter-spacing:2px; font-size:0.9rem;">LOGOUT</div>
+                </div>
+            </div>
+        </a>
+
+    </div>
+
+    <!-- Danger zone -->
+    <div style="text-align:center; margin-top:10px;">
+        <a href="{{ url_for('delete_account') }}" style="font-family:'JetBrains Mono'; font-size:0.6rem; color:rgba(255,75,75,0.4); text-decoration:none; letter-spacing:2px; transition:color 0.2s;"
+            onmouseover="this.style.color='var(--alert-red)'"
+            onmouseout="this.style.color='rgba(255,75,75,0.4)'">
+            DELETE ACCOUNT
+        </a>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+@keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:0.3} }
+</style>
+<script>
+// Poll every 8 seconds to keep stats live whenever a pipeline is running
+function pollDashboard() {
+    fetch('{{ url_for("projects") | replace("/projects", "") }}/projects', {headers: {'Accept': 'application/json'}})
+        .catch(() => {});
+    // Simplest approach: just reload the page so Flask recalculates stats
+    location.reload();
+}
+
+{% if running_experiments > 0 %}
+// Pipelines are running — keep refreshing until they finish
+(function tick() {
+    setTimeout(function() {
+        location.reload();
+    }, 8000);
+})();
+{% endif %}
+</script>
+{% endblock %}

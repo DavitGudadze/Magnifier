@@ -1,0 +1,37 @@
+# Systemd service file for Celery Worker
+# 
+# Installation:
+# 1. Copy to /etc/systemd/system/bioworkflow-celery.service
+# 2. Update paths and user
+# 3. sudo systemctl daemon-reload
+# 4. sudo systemctl enable bioworkflow-celery
+# 5. sudo systemctl start bioworkflow-celery
+
+[Unit]
+Description=Bioinformatics Workflow Platform (Celery Worker)
+After=network.target redis.service
+
+[Service]
+Type=forking
+User=www-data
+Group=www-data
+WorkingDirectory=/path/to/bioworkflow
+Environment="PATH=/path/to/bioworkflow/venv/bin"
+ExecStart=/path/to/bioworkflow/venv/bin/celery -A app.celery worker \
+    --loglevel=info \
+    --logfile=logs/celery_worker.log \
+    --pidfile=celery_worker.pid \
+    --detach
+ExecStop=/bin/kill -s TERM $MAINPID
+ExecReload=/bin/kill -s HUP $MAINPID
+
+# Restart policy
+Restart=always
+RestartSec=10
+
+# Security
+NoNewPrivileges=true
+PrivateDevices=true
+
+[Install]
+WantedBy=multi-user.target

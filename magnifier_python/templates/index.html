@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block title %}HOME{% endblock %}
+{% block content %}
+
+<div id="loader-wrapper">
+    <div class="dna-container">
+        {% for i in range(1, 11) %}
+        <div class="dna-strand" style="--i:{{ i }}"></div>
+        {% endfor %}
+    </div>
+    <p style="color: var(--cyan); font-family: 'JetBrains Mono'; font-size: 0.6rem; margin-top: 20px;">INITIALIZING_CORE_SYSTEM...</p>
+</div>
+
+<div class="container">
+    <div class="auth-card">
+        <h2>PERSONNEL IDENTITY</h2>
+        <div style="margin-top:20px; font-family: 'JetBrains Mono';">
+            <p style="color: var(--cyan);">STATUS: {{ "AUTHORIZED" if auth else "GUEST_ROOT" }}</p>
+            <p style="color: var(--text-dim); font-size: 0.8rem;">NAME: {{ user_name.upper() if auth else "---" }}</p>
+        </div>
+        <div style="margin-top: 30px;">
+            {% if not auth %}
+                <a href="{{ url_for('login') }}" class="core-btn">LOGIN TO TERMINAL</a>
+            {% else %}
+                <p style="color: var(--green); font-size: 0.7rem;">TERMINAL ACCESS GRANTED</p>
+                <a href="{{ url_for('dashboard') }}" class="core-btn" style="margin-top: 12px;">GO TO DASHBOARD</a>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if not auth %}
+    <div class="auth-card" style="margin-top: 20px; text-align: left;">
+        <h2 style="text-align:center; margin-bottom: 20px;">WHAT IS MAGNIFIER?</h2>
+        <p style="color: var(--text-dim); font-family: 'JetBrains Mono'; font-size: 0.7rem; line-height: 2; text-align: center;">
+            Bioinformatics pipeline for<br>
+            <span style="color: var(--cyan);">differential expression analysis</span> +
+            <span style="color: var(--purple);">variant annotation</span>
+        </p>
+        <div style="margin-top: 25px; display: flex; flex-direction: column; gap: 12px; font-family: 'JetBrains Mono'; font-size: 0.65rem;">
+            <div style="display:flex; align-items:center; gap:12px; color: var(--text-dim);">
+                <span style="color:var(--cyan); font-size:1rem;">①</span> Upload expression data (.csv) and VCF files
+            </div>
+            <div style="display:flex; align-items:center; gap:12px; color: var(--text-dim);">
+                <span style="color:var(--purple); font-size:1rem;">②</span> Run the automated analysis pipeline
+            </div>
+            <div style="display:flex; align-items:center; gap:12px; color: var(--text-dim);">
+                <span style="color:var(--green); font-size:1rem;">③</span> Download merged results
+            </div>
+        </div>
+        <div style="margin-top: 25px; text-align:center;">
+            <a href="{{ url_for('register') }}" class="core-btn secondary" style="display:inline-flex; width: auto; padding: 12px 30px;">
+                INITIALIZE PROFILE →
+            </a>
+        </div>
+    </div>
+    {% else %}
+    <div class="auth-card {% if not auth %}restricted-blur{% endif %}" style="margin-top: 20px; position: relative;">
+        <h2>CORE OPERATIONS</h2>
+        <div style="margin-top: 20px;">
+            <a href="{{ url_for('dashboard') }}" class="core-btn secondary" style="margin-bottom:12px;">ACCESS DASHBOARD</a>
+            <a href="{{ url_for('projects') }}" class="core-btn secondary" style="background: linear-gradient(90deg, #0db0e6, var(--cyan)); color: #000; margin-top: 10px;">VIEW PROJECTS</a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}

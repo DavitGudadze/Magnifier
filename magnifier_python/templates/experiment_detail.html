@@ -1,0 +1,324 @@
+{% extends 'base.html' %}
+{% block title %}{{ experiment.name.upper() }}{% endblock %}
+{% block body_class %}page-experiment{% endblock %}
+{% block content %}
+
+<div class="vertical-brand right-pos">EXPERIMENT</div>
+
+<div class="container" style="max-width: 900px;">
+
+    <!-- Logo inside content -->
+    <a href="{{ url_for('index') }}" style="display:block; text-align:center; margin-bottom:25px;">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="home" class="pulse-white" style="height:80px;">
+    </a>
+
+    <!-- Breadcrumb -->
+    <div style="width:100%; margin-bottom:20px; font-family:'JetBrains Mono'; font-size:0.6rem; color:var(--text-dim);">
+        <a href="{{ url_for('dashboard') }}" style="color:var(--text-dim);text-decoration:none;">DASHBOARD</a>
+        <span style="margin:0 8px; color:var(--glass-border);">/</span>
+        <a href="{{ url_for('projects') }}" style="color:var(--text-dim);text-decoration:none;">PROJECTS</a>
+        <span style="margin:0 8px; color:var(--glass-border);">/</span>
+        <a href="{{ url_for('project_detail', project_id=experiment.project_id) }}" style="color:var(--text-dim);text-decoration:none;">{{ experiment.project_name }}</a>
+        <span style="margin:0 8px; color:var(--glass-border);">/</span>
+        <span style="color:var(--cyan);">{{ experiment.name.upper() }}</span>
+    </div>
+
+    <header id="main-header" class="show-title" style="margin-bottom: 40px; width:100%; text-align:left;">
+        <div style="display:flex; align-items:center; gap:16px; margin-bottom:10px;">
+            <div style="width:52px;height:52px;border-radius:12px;background:rgba(24,224,255,0.1);border:1px solid var(--cyan);display:flex;align-items:center;justify-content:center; flex-shrink:0; box-shadow: 0 0 20px rgba(24,224,255,0.2);">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
+                    <path d="M9 3h6M8 3l-4 8a4 4 0 008 0L8 3M16 3l4 8a4 4 0 01-8 0L16 3"/>
+                    <line x1="6" y1="14" x2="18" y2="14"/>
+                </svg>
+            </div>
+            <div>
+                <div style="font-family:'JetBrains Mono';font-size:0.6rem;color:var(--text-dim);letter-spacing:3px;margin-bottom:4px;">EXPERIMENT LOG</div>
+                <h1 style="font-size:3rem; font-weight:900; letter-spacing:10px; background: linear-gradient(90deg, #fff, var(--cyan)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; line-height:1;">{{ experiment.name.upper() }}</h1>
+                {% if experiment.description %}
+                <p style="color:var(--text-dim); font-family:'JetBrains Mono'; font-size:0.65rem; margin-top:6px; font-style:italic;">{{ experiment.description }}</p>
+                {% endif %}
+                <p style="color: var(--text-dim); font-family: 'JetBrains Mono'; font-size: 0.65rem; margin-top: 6px;">
+                    PROJECT: {{ experiment.project_name }} // STATUS:
+                    <span id="status-badge" style="color: {% if experiment.status == 'completed' %}var(--green){% elif experiment.status == 'failed' %}var(--alert-red){% else %}var(--cyan){% endif %};">
+                        {{ experiment.status.upper() }}
+                    </span>
+                </p>
+            </div>
+        </div>
+        <div style="height:2px;background:linear-gradient(90deg,var(--cyan),transparent);border-radius:2px;margin-top:10px;"></div>
+    </header>
+
+    <!-- Status card -->
+    <div class="auth-card" style="max-width: 100%; margin-bottom: 25px; text-align: left; padding: 30px; border-color: rgba(182,120,255,0.3);">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+            <div>
+                <p style="font-family: 'JetBrains Mono'; font-size: 0.65rem; color: var(--text-dim);">PIPELINE PROGRESS</p>
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    {% for step in range(1, 5) %}
+                    <div class="pipeline-step" style="width: 50px; height: 8px; border-radius: 4px;
+                        background: {% if experiment.current_step and step <= experiment.current_step %}
+                            {% if experiment.status == 'failed' and step == experiment.current_step %}var(--alert-red)
+                            {% else %}var(--cyan){% endif %}
+                        {% else %}rgba(255,255,255,0.1){% endif %};
+                        transition: background 0.5s;"></div>
+                    {% endfor %}
+                </div>
+                <p style="font-family: 'JetBrains Mono'; font-size: 0.6rem; color: var(--text-dim); margin-top: 8px;">
+                    <span id="step-text">Step {{ experiment.current_step or 0 }} / 4
+                    {% if experiment.status == 'completed' %} — PIPELINE COMPLETE{% endif %}
+                    {% if experiment.status == 'failed' %} — {{ experiment.error_message or 'Unknown error' }}{% endif %}
+                    </span>
+                </p>
+                {% if experiment.started_at %}
+                <p style="font-family:'JetBrains Mono'; font-size:0.6rem; color:var(--text-dim); margin-top:10px; line-height:1.8;">
+                    STARTED: <span style="color:var(--cyan);">{{ experiment.started_at[:10] }}</span>
+                    {% if experiment.completed_at %}
+                    &nbsp;//&nbsp; COMPLETED: <span style="color:var(--green);">{{ experiment.completed_at[:10] }}</span>
+                    {% endif %}
+                </p>
+                {% endif %}
+            </div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                {% if experiment.can_run %}
+                <button id="run-btn" onclick="runPipeline({{ experiment.id }})" class="core-btn" style="width: auto; padding: 12px 24px;">
+                    ▶ RUN PIPELINE
+                </button>
+                {% endif %}
+                {% if experiment.has_result %}
+                <a href="{{ url_for('download_result', experiment_id=experiment.id) }}" class="core-btn secondary" style="width: auto; padding: 12px 24px;">
+                    ↓ DOWNLOAD RESULT
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- File upload section -->
+    <div class="auth-card" style="max-width: 100%; margin-bottom: 25px; text-align: left; padding: 30px; border-color: rgba(182,120,255,0.3);">
+        <h2 style="margin-bottom: 25px; font-size: 1rem; color: var(--cyan);">FILE_UPLOAD_CONSOLE</h2>
+
+        <!-- Expression file -->
+        <div style="margin-bottom: 30px;">
+            <p style="font-family: 'JetBrains Mono'; font-size: 0.65rem; color: var(--cyan); margin-bottom: 12px; letter-spacing: 1px;">
+                EXPRESSION FILE (.csv/.tsv/.txt)
+            </p>
+            {% if experiment.has_expression_file %}
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px; background:rgba(255,255,255,0.05); padding:8px 12px; border-radius:6px; border:1px solid rgba(255,255,255,0.1);">
+                <span style="color:var(--green); font-family:'JetBrains Mono'; font-size:0.65rem;">✓ {{ experiment.expression_filename }}</span>
+                <button onclick="deleteFile({{ experiment.id }}, 'expression')" style="background:none;border:none;color:var(--alert-red);cursor:pointer;font-family:'JetBrains Mono';font-size:0.6rem;margin-left:auto;">[ REMOVE ]</button>
+            </div>
+            {% else %}
+            <span style="color:var(--alert-red); font-family:'JetBrains Mono'; font-size:0.65rem; display:block; margin-bottom:10px;">✗ NOT UPLOADED</span>
+            {% endif %}
+            <div style="display: flex; gap: 12px; align-items: center;">
+                <input type="file" id="expr-file" accept=".csv,.tsv,.txt,.tab"
+                    style="color: var(--text-dim); font-family: 'JetBrains Mono'; font-size: 0.65rem; background: none; border: none;">
+                <button onclick="uploadExpression({{ experiment.id }})" class="mini-btn" style="background: var(--glass); border: 1px solid var(--cyan); color: var(--cyan); padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.65rem; font-family: 'JetBrains Mono'; white-space: nowrap;">
+                    {% if experiment.has_expression_file %}REPLACE{% else %}UPLOAD EXPR{% endif %}
+                </button>
+            </div>
+            <div id="expr-msg" style="font-family: 'JetBrains Mono'; font-size: 0.6rem; margin-top: 8px; min-height: 16px;"></div>
+        </div>
+
+        <!-- VCF files -->
+        <div>
+            <p style="font-family: 'JetBrains Mono'; font-size: 0.65rem; color: var(--cyan); margin-bottom: 12px; letter-spacing: 1px;">
+                VCF FILES (.vcf/.vcf.gz) — multiple allowed
+            </p>
+            {% if experiment.has_vcf_files %}
+            <div style="margin-bottom:10px;">
+                {% for vcf in experiment.vcf_files %}
+                <div style="display:flex; align-items:center; gap:12px; margin-bottom:6px; background:rgba(255,255,255,0.05); padding:8px 12px; border-radius:6px; border:1px solid rgba(255,255,255,0.1);">
+                    <span style="color:var(--green); font-family:'JetBrains Mono'; font-size:0.65rem;">✓ {{ vcf.filename }}</span>
+                    <button onclick="deleteFile({{ experiment.id }}, 'vcf', {{ vcf.id }})" style="background:none;border:none;color:var(--alert-red);cursor:pointer;font-family:'JetBrains Mono';font-size:0.6rem;margin-left:auto;">[ REMOVE ]</button>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <span style="color:var(--alert-red); font-family:'JetBrains Mono'; font-size:0.65rem; display:block; margin-bottom:10px;">✗ NOT UPLOADED</span>
+            {% endif %}
+            <div style="display: flex; gap: 12px; align-items: center;">
+                <input type="file" id="vcf-files" accept=".vcf,.gz" multiple
+                    style="color: var(--text-dim); font-family: 'JetBrains Mono'; font-size: 0.65rem; background: none; border: none;">
+                <button onclick="uploadVCF({{ experiment.id }})" class="mini-btn" style="background: var(--glass); border: 1px solid var(--cyan); color: var(--cyan); padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.65rem; font-family: 'JetBrains Mono'; white-space: nowrap;">
+                    UPLOAD VCF
+                </button>
+            </div>
+            <div id="vcf-msg" style="font-family: 'JetBrains Mono'; font-size: 0.6rem; margin-top: 8px; min-height: 16px;"></div>
+        </div>
+    </div>
+
+    <div style="display: flex; gap: 20px; margin-top: 20px; justify-content: center; flex-wrap: wrap;">
+        <a href="{{ url_for('project_detail', project_id=experiment.project_id) }}" class="core-btn secondary" style="width: 220px;">← BACK TO PROJECT</a>
+        <button onclick="showDeleteModal()" class="core-btn" style="width: 220px; background: transparent; border: 1px solid var(--alert-red); color: var(--alert-red);">DELETE EXPERIMENT</button>
+    </div>
+
+    <!-- Delete modal — inside content block so JS can find it -->
+    <div id="delete-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:9999;align-items:center;justify-content:center;">
+        <div class="auth-card" style="max-width:420px;border-color:var(--alert-red);text-align:center;">
+            <h2 style="color:var(--alert-red);margin-bottom:15px;">⚠ CONFIRM DELETE</h2>
+            <p style="font-family:'JetBrains Mono';font-size:0.65rem;color:var(--text-dim);line-height:1.8;margin-bottom:25px;">
+                DELETE EXPERIMENT <span style="color:#fff;font-weight:bold;">{{ experiment.name.upper() }}</span>?<br>
+                ALL UPLOADED FILES AND RESULTS WILL BE LOST.<br>
+                THIS CANNOT BE UNDONE.
+            </p>
+            <div style="display:flex;gap:15px;justify-content:center;">
+                <button onclick="hideDeleteModal()" class="core-btn secondary" style="width:160px;">CANCEL</button>
+                <form method="POST" action="{{ url_for('delete_experiment', experiment_id=experiment.id) }}" style="margin:0;">
+                    <input type="hidden" name="project_id" value="{{ experiment.project_id }}">
+                    <button type="submit" class="core-btn" style="width:160px;background:transparent;border:1px solid var(--alert-red);color:var(--alert-red);">YES, DELETE</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner {
+    display: inline-block;
+    width: 10px; height: 10px;
+    border: 2px solid rgba(255,255,255,0.2);
+    border-top-color: var(--cyan);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+}
+</style>
+<script>
+const PREFIX = '{{ PREFIX }}';
+const experimentId = {{ experiment.id }};
+let pipelineRunning = false;
+
+// ── Issue 5: Warn user before leaving if pipeline is running ─────────────
+window.addEventListener('beforeunload', function(e) {
+    if (pipelineRunning) {
+        e.preventDefault();
+        e.returnValue = 'Pipeline is still running. Are you sure you want to leave?';
+    }
+});
+
+function showDeleteModal() {
+    document.getElementById('delete-modal').style.display = 'flex';
+}
+function hideDeleteModal() {
+    document.getElementById('delete-modal').style.display = 'none';
+}
+document.getElementById('delete-modal').addEventListener('click', function(e) {
+    if (e.target === this) hideDeleteModal();
+});
+
+// ── Issue 4: Spinner helper ──────────────────────────────────────────────
+function setLoading(btn, loading, label) {
+    if (loading) {
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner"></span> ${label}`;
+        btn.style.opacity = '0.7';
+    } else {
+        btn.disabled = false;
+        btn.innerHTML = label;
+        btn.style.opacity = '1';
+    }
+}
+
+async function uploadExpression(expId) {
+    const file = document.getElementById('expr-file').files[0];
+    const msg = document.getElementById('expr-msg');
+    if (!file) { setMsg(msg, 'Select a file first', 'error'); return; }
+    const btn = document.querySelector('button[onclick^="uploadExpression"]');
+    setLoading(btn, true, 'UPLOADING...');
+    setMsg(msg, '', 'info');
+    const fd = new FormData();
+    fd.append('expression_file', file);
+    try {
+        const r = await fetch(`${PREFIX}/experiments/${expId}/upload_expression`, { method: 'POST', body: fd });
+        const data = await r.json();
+        if (r.ok) { setMsg(msg, `✓ UPLOADED: ${data.file.filename}`, 'success'); setTimeout(() => location.reload(), 800); }
+        else { setMsg(msg, `✗ ${data.error || 'Upload failed'}`, 'error'); setLoading(btn, false, '{% if experiment.has_expression_file %}REPLACE{% else %}UPLOAD EXPR{% endif %}'); }
+    } catch(e) { setMsg(msg, '✗ Network error', 'error'); setLoading(btn, false, '{% if experiment.has_expression_file %}REPLACE{% else %}UPLOAD EXPR{% endif %}'); }
+}
+
+async function uploadVCF(expId) {
+    const files = document.getElementById('vcf-files').files;
+    const msg = document.getElementById('vcf-msg');
+    if (!files.length) { setMsg(msg, 'Select files first', 'error'); return; }
+    const btn = document.querySelector('button[onclick^="uploadVCF"]');
+    setLoading(btn, true, `UPLOADING ${files.length} FILE(S)...`);
+    setMsg(msg, '', 'info');
+    const fd = new FormData();
+    for (const f of files) fd.append('vcf_files', f);
+    try {
+        const r = await fetch(`${PREFIX}/experiments/${expId}/upload_vcf`, { method: 'POST', body: fd });
+        const data = await r.json();
+        if (r.ok) { setMsg(msg, `✓ UPLOADED ${data.files.length} VCF FILE(S)`, 'success'); setTimeout(() => location.reload(), 800); }
+        else { setMsg(msg, `✗ ${data.error || 'Upload failed'}`, 'error'); setLoading(btn, false, 'UPLOAD VCF'); }
+    } catch(e) { setMsg(msg, '✗ Network error', 'error'); setLoading(btn, false, 'UPLOAD VCF'); }
+}
+
+async function deleteFile(expId, fileType, fileId) {
+    const url = fileType === 'expression'
+        ? `${PREFIX}/experiments/${expId}/delete_expression`
+        : `${PREFIX}/experiments/${expId}/delete_vcf/${fileId}`;
+    try {
+        const r = await fetch(url, { method: 'POST' });
+        if (r.ok) location.reload();
+        else { const d = await r.json(); alert('Error: ' + (d.error || 'Could not delete file')); }
+    } catch(e) { alert('Network error'); }
+}
+
+async function runPipeline(expId) {
+    const btn = document.getElementById('run-btn');
+    setLoading(btn, true, 'QUEUING...');
+    pipelineRunning = true;
+    try {
+        const r = await fetch(`${PREFIX}/experiments/${expId}/run`, { method: 'POST' });
+        const data = await r.json();
+        if (r.ok) { btn.innerHTML = '✓ QUEUED'; startPolling(expId); }
+        else { btn.innerHTML = '✗ ' + (data.error || 'Check files'); btn.disabled = false; pipelineRunning = false; }
+    } catch(e) { btn.innerHTML = '✗ Network error'; btn.disabled = false; pipelineRunning = false; }
+}
+
+function startPolling(expId) {
+    pipelineRunning = true;
+    const interval = setInterval(async () => {
+        try {
+            const r = await fetch(`${PREFIX}/experiments/${expId}/status`);
+            const data = await r.json();
+            document.querySelectorAll('.pipeline-step').forEach((el, i) => {
+                const s = i + 1;
+                el.style.background = (data.current_step && s <= data.current_step)
+                    ? (data.status === 'failed' && s === data.current_step ? 'var(--alert-red)' : 'var(--cyan)')
+                    : 'rgba(255,255,255,0.1)';
+            });
+            const stepText = document.getElementById('step-text');
+            if (stepText) {
+                stepText.textContent = `Step ${data.current_step || 0} / 4`;
+                if (data.status === 'running') stepText.textContent += ' — PROCESSING...';
+                if (data.status === 'queued') stepText.textContent += ' — QUEUED...';
+            }
+            const badge = document.getElementById('status-badge');
+            if (badge) {
+                badge.textContent = data.status.toUpperCase();
+                badge.style.color = data.status === 'completed' ? 'var(--green)' : data.status === 'failed' ? 'var(--alert-red)' : 'var(--cyan)';
+            }
+            if (data.status === 'completed' || data.status === 'failed') {
+                pipelineRunning = false;
+                clearInterval(interval);
+                setTimeout(() => location.reload(), 800);
+            }
+        } catch(e) {}
+    }, 3000);
+}
+
+function setMsg(el, text, type) {
+    el.textContent = text;
+    el.style.color = type === 'success' ? 'var(--green)' : type === 'error' ? 'var(--alert-red)' : 'var(--cyan)';
+}
+
+const currentStatus = '{{ experiment.status }}';
+if (currentStatus === 'running' || currentStatus === 'queued') startPolling(experimentId);
+</script>
+{% endblock %}

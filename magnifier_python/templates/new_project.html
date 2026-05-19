@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container">
+    <div class="auth-card" style="max-width: 560px;">
+        <h2>INITIALIZE PROJECT</h2>
+        {% if error %}
+        <div style="color: var(--alert-red); font-size: 0.65rem; margin: 15px 0;">⚠️ {{ error }}</div>
+        {% endif %}
+        <form method="POST" action="{{ url_for('new_project') }}">
+            <div class="input-group">
+                <label>Project Name</label>
+                <input type="text" name="name" required placeholder="e.g. Cancer Genomics Study">
+            </div>
+            <div class="input-group">
+                <label>Description</label>
+                <input type="text" name="description" placeholder="Short description (optional)">
+            </div>
+            <button type="submit" class="core-btn">INITIALIZE PROJECT →</button>
+        </form>
+        <div style="margin-top: 20px;">
+            <a href="{{ url_for('projects') }}" style="color: var(--text-dim); font-size: 0.75rem; text-decoration: none;">← BACK TO PROJECTS</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

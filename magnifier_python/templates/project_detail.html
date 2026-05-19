@@ -1,0 +1,273 @@
+{% extends 'base.html' %}
+{% block body_class %}page-project-detail{% endblock %}
+{% block content %}
+
+<div class="vertical-brand right-pos">PROJECT</div>
+
+<div class="container" style="max-width: 1100px;">
+
+    <!-- Logo inside content -->
+    <a href="{{ url_for('index') }}" style="display:block; text-align:center; margin-bottom:25px;">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="home" class="pulse-white" style="height:80px;">
+    </a>
+
+    <!-- Breadcrumb -->
+    <div style="width:100%; margin-bottom:20px; font-family:'JetBrains Mono'; font-size:0.6rem; color:var(--text-dim);">
+        <a href="{{ url_for('dashboard') }}" style="color:var(--text-dim);text-decoration:none;">DASHBOARD</a>
+        <span style="margin:0 8px; color:var(--glass-border);">/</span>
+        <a href="{{ url_for('projects') }}" style="color:var(--text-dim);text-decoration:none;">PROJECTS</a>
+        <span style="margin:0 8px; color:var(--glass-border);">/</span>
+        <span style="color:var(--cyan);">{{ project.name.upper() }}</span>
+    </div>
+
+    <header id="main-header" class="show-title" style="margin-bottom: 40px; width:100%; text-align:left;">
+        <div style="display:flex; align-items:center; gap:16px; margin-bottom:10px;">
+            <div style="width:52px;height:52px;border-radius:12px;background:rgba(24,224,255,0.1);border:1px solid var(--cyan);display:flex;align-items:center;justify-content:center; flex-shrink:0; box-shadow: 0 0 20px rgba(24,224,255,0.2);">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
+                    <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/><line x1="2" y1="10" x2="22" y2="10"/>
+                </svg>
+            </div>
+            <div>
+                <div style="font-family:'JetBrains Mono';font-size:0.6rem;color:var(--text-dim);letter-spacing:3px;margin-bottom:4px;">PROJECT NAME</div>
+                <h1 style="font-size:3rem; font-weight:900; letter-spacing:10px; background: linear-gradient(90deg, #fff, var(--cyan)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; line-height:1;">{{ project.name.upper() }}</h1>
+                <p style="color: var(--text-dim); font-family: 'JetBrains Mono'; font-size: 0.7rem; margin-top: 8px;">
+                    {{ project.description or 'No description' }}
+                </p>
+            </div>
+        </div>
+        <div style="height:2px;background:linear-gradient(90deg,var(--cyan),transparent);border-radius:2px;margin-top:10px;"></div>
+    </header>
+
+    <!-- Stats -->
+    <div class="stats-grid" style="margin-bottom: 30px;">
+        <div class="stat-card">
+            <p class="stat-label">Experiments</p>
+            <h3 class="stat-value" style="color: var(--cyan);">{{ project.experiment_count }}</h3>
+        </div>
+        {% if project.status_counts %}
+        <div class="stat-card">
+            <p class="stat-label">Completed</p>
+            <h3 class="stat-value" style="color: var(--green);">{{ project.status_counts.get('completed', 0) }}</h3>
+        </div>
+        {% set running_count = project.status_counts.get('running', 0) + project.status_counts.get('queued', 0) %}
+        {% if running_count > 0 %}
+        <div class="stat-card">
+            <p class="stat-label">Running</p>
+            <h3 class="stat-value" style="color: var(--cyan);">{{ running_count }}</h3>
+        </div>
+        {% endif %}
+        {% set ready_count = project.status_counts.get('ready', 0) %}
+        {% if ready_count > 0 %}
+        <div class="stat-card">
+            <p class="stat-label">Ready</p>
+            <h3 class="stat-value" style="color: var(--cyan);">{{ ready_count }}</h3>
+        </div>
+        {% endif %}
+        {% set failed_count = project.status_counts.get('failed', 0) %}
+        {% if failed_count > 0 %}
+        <div class="stat-card">
+            <p class="stat-label">Failed</p>
+            <h3 class="stat-value" style="color: var(--alert-red);">{{ failed_count }}</h3>
+        </div>
+        {% endif %}
+        {% endif %}
+    </div>
+
+    <!-- Experiments Table -->
+    <div class="dashboard-content" style="width: 100%;">
+        <div class="auth-card data-table-container" style="max-width: 100%;">
+            <div class="table-header-flex">
+                <h2>EXPERIMENT_LOG</h2>
+                <a href="{{ url_for('new_experiment', project_id=project.id) }}" class="mini-btn" style="background: var(--glass); border: 1px solid var(--cyan); color: var(--cyan); padding: 8px 16px; border-radius: 6px; font-size: 0.65rem; font-family: 'JetBrains Mono'; text-decoration: none;">
+                    + NEW EXPERIMENT
+                </a>
+            </div>
+
+            {% if experiments %}
+            <table class="terminal-table">
+                <thead>
+                    <tr style="color: var(--cyan);">
+                        <th>Name</th>
+                        <th>Status</th>
+                        <th>Files</th>
+                        <th>Progress</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for e in experiments %}
+                    <tr data-exp-id="{{ e.id }}">
+                        <td style="color: #fff; font-weight: 700;">{{ e.name }}</td>
+                        <td class="exp-status">
+                            {% if e.status == 'completed' %}
+                                <span class="status-badge success">COMPLETED</span>
+                            {% elif e.status in ['running', 'queued'] %}
+                                <span class="status-badge warning">{{ e.status.upper() }}</span>
+                            {% elif e.status == 'failed' %}
+                                <span class="status-badge danger">FAILED</span>
+                            {% else %}
+                                <span class="status-badge" style="background:rgba(143,163,192,0.2);color:var(--text-dim);border:1px solid var(--text-dim);">{{ e.status.upper() }}</span>
+                            {% endif %}
+                        </td>
+                        <td style="font-family: 'JetBrains Mono'; font-size: 0.65rem; color: var(--text-dim);">
+                            {% if e.has_expression_file %}✓ EXPR{% else %}✗ EXPR{% endif %} &nbsp;
+                            {% if e.has_vcf_files %}✓ VCF({{ e.vcf_file_count }}){% else %}✗ VCF{% endif %}
+                        </td>
+                        <td class="exp-progress" style="font-family: 'JetBrains Mono'; font-size: 0.65rem;">
+                            {% set step = 4 if e.status == 'completed' else (e.current_step or 0) %}
+                            {% set bar_color = 'var(--green)' if e.status == 'completed' else ('var(--alert-red)' if e.status == 'failed' else 'var(--cyan)') %}
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                {% for i in range(1, 5) %}
+                                <div style="width:16px; height:4px; border-radius:2px; background:{% if step >= i %}{{ bar_color }}{% else %}rgba(255,255,255,0.1){% endif %};"></div>
+                                {% endfor %}
+                                <span style="color:{{ bar_color }}; font-family:'JetBrains Mono'; font-size:0.6rem; white-space:nowrap;">{{ step }}/4</span>
+                            </div>
+                        </td>
+                        <td style="font-family:'JetBrains Mono'; font-size:0.6rem; color:var(--text-dim); white-space:nowrap;">
+                            {{ e.created_at[:10] if e.created_at else '—' }}
+                        </td>
+                        <td style="white-space:nowrap;">
+                            <a href="{{ url_for('experiment_detail', experiment_id=e.id) }}" class="action-link" style="color: var(--cyan); margin-right: 12px;">[ OPEN ]</a>
+                            <button onclick="confirmDeleteExperiment({{ e.id }}, '{{ e.name }}')" class="action-link" style="background:none;border:none;cursor:pointer;color:var(--alert-red);font-family:'JetBrains Mono';font-size:0.7rem;padding:0;">[ DELETE ]</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div style="text-align: center; padding: 40px; color: var(--text-dim); font-family: 'JetBrains Mono'; font-size: 0.7rem;">
+                NO EXPERIMENTS FOUND //
+                <a href="{{ url_for('new_experiment', project_id=project.id) }}" style="color: var(--cyan);">CREATE FIRST EXPERIMENT</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div style="display: flex; gap: 20px; margin-top: 30px; justify-content: center; flex-wrap: wrap;">
+        <a href="{{ url_for('projects') }}" class="core-btn secondary" style="width: 220px;">← BACK TO PROJECTS</a>
+        <button onclick="showDeleteModal()" class="core-btn" style="width: 220px; background: transparent; border: 1px solid var(--alert-red); color: var(--alert-red);">DELETE PROJECT</button>
+    </div>
+</div>
+
+<!-- Delete experiment modal -->
+<div id="exp-delete-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:9999;align-items:center;justify-content:center;">
+    <div class="auth-card" style="max-width:420px;border-color:var(--alert-red);text-align:center;">
+        <h2 style="color:var(--alert-red);margin-bottom:15px;">⚠ CONFIRM DELETE</h2>
+        <p style="font-family:'JetBrains Mono';font-size:0.65rem;color:var(--text-dim);line-height:1.8;margin-bottom:25px;">
+            DELETE EXPERIMENT <span id="exp-delete-name" style="color:#fff;font-weight:bold;"></span>?<br>
+            ALL FILES AND RESULTS WILL BE LOST.<br>
+            THIS CANNOT BE UNDONE.
+        </p>
+        <div style="display:flex;gap:15px;justify-content:center;">
+            <button onclick="hideExpDeleteModal()" class="core-btn secondary" style="width:160px;">CANCEL</button>
+            <form id="exp-delete-form" method="POST" action="" style="margin:0;">
+                <button type="submit" class="core-btn" style="width:160px;background:transparent;border:1px solid var(--alert-red);color:var(--alert-red);">YES, DELETE</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete confirmation modal -->
+<div id="delete-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:9999;align-items:center;justify-content:center;">
+    <div class="auth-card" style="max-width:420px;border-color:var(--alert-red);text-align:center;">
+        <h2 style="color:var(--alert-red);margin-bottom:15px;">⚠ CONFIRM DELETE</h2>
+        <p style="font-family:'JetBrains Mono';font-size:0.65rem;color:var(--text-dim);line-height:1.8;margin-bottom:25px;">
+            DELETE PROJECT <span style="color:#fff;font-weight:bold;">{{ project.name.upper() }}</span>?<br>
+            THIS WILL DELETE ALL {{ project.experiment_count }} EXPERIMENT(S).<br>
+            THIS CANNOT BE UNDONE.
+        </p>
+        <div style="display:flex;gap:15px;justify-content:center;">
+            <button onclick="hideDeleteModal()" class="core-btn secondary" style="width:160px;">CANCEL</button>
+            <form method="POST" action="{{ url_for('delete_project', project_id=project.id) }}" style="margin:0;">
+                <button type="submit" class="core-btn" style="width:160px;background:transparent;border:1px solid var(--alert-red);color:var(--alert-red);">YES, DELETE</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function showDeleteModal() {
+    document.getElementById('delete-modal').style.display = 'flex';
+}
+function hideDeleteModal() {
+    document.getElementById('delete-modal').style.display = 'none';
+}
+function confirmDeleteExperiment(expId, expName) {
+    document.getElementById('exp-delete-name').textContent = expName.toUpperCase();
+    document.getElementById('exp-delete-form').action = '{{ PREFIX }}/experiments/' + expId + '/delete';
+    document.getElementById('exp-delete-modal').style.display = 'flex';
+}
+function hideExpDeleteModal() {
+    document.getElementById('exp-delete-modal').style.display = 'none';
+}
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('delete-modal').addEventListener('click', function(e) {
+        if (e.target === this) hideDeleteModal();
+    });
+    document.getElementById('exp-delete-modal').addEventListener('click', function(e) {
+        if (e.target === this) hideExpDeleteModal();
+    });
+
+    // --- Live status polling ---
+    function hasActiveExperiments() {
+        return document.querySelectorAll('.status-badge.warning').length > 0;
+    }
+
+    function statusBadgeHTML(status) {
+        if (status === 'completed') return '<span class="status-badge success">COMPLETED</span>';
+        if (status === 'running' || status === 'queued') return '<span class="status-badge warning">' + status.toUpperCase() + '</span>';
+        if (status === 'failed') return '<span class="status-badge danger">FAILED</span>';
+        return '<span class="status-badge" style="background:rgba(143,163,192,0.2);color:var(--text-dim);border:1px solid var(--text-dim);">' + status.toUpperCase() + '</span>';
+    }
+
+    function progressBarHTML(status, currentStep) {
+        var step = status === 'completed' ? 4 : (currentStep || 0);
+        var color = status === 'completed' ? 'var(--green)' : (status === 'failed' ? 'var(--alert-red)' : 'var(--cyan)');
+        var html = '<div style="display:flex; align-items:center; gap:6px;">';
+        for (var i = 1; i <= 4; i++) {
+            html += '<div style="width:16px; height:4px; border-radius:2px; background:' + (step >= i ? color : 'rgba(255,255,255,0.1)') + ';"></div>';
+        }
+        html += '<span style="color:' + color + '; font-family:\'JetBrains Mono\'; font-size:0.6rem; white-space:nowrap;">' + step + '/4</span></div>';
+        return html;
+    }
+
+    function pollProjectStatus() {
+        fetch('{{ PREFIX }}/projects/{{ project.id }}/status')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                // Update stat cards
+                if (data.status_counts) {
+                    var sc = data.status_counts;
+                    var statCards = document.querySelectorAll('.stat-card .stat-value');
+                    if (statCards.length >= 1) statCards[0].textContent = data.experiment_count;
+                    if (statCards.length >= 2) statCards[1].textContent = sc.completed || 0;
+                    if (statCards.length >= 3) statCards[2].textContent = (sc.running || 0);
+                    if (statCards.length >= 4) statCards[3].textContent = sc.ready || 0;
+                }
+                // Update experiment rows
+                if (data.experiments) {
+                    data.experiments.forEach(function(exp) {
+                        var row = document.querySelector('tr[data-exp-id="' + exp.id + '"]');
+                        if (!row) return;
+                        row.querySelector('.exp-status').innerHTML = statusBadgeHTML(exp.status);
+                        row.querySelector('.exp-progress').innerHTML = progressBarHTML(exp.status, exp.current_step);
+                    });
+                }
+                // Keep polling if anything is still active
+                if (data.has_active) {
+                    setTimeout(pollProjectStatus, 3000);
+                }
+            })
+            .catch(function() {
+                // silently stop on error
+            });
+    }
+
+    if (hasActiveExperiments()) {
+        setTimeout(pollProjectStatus, 3000);
+    }
+});
+</script>
+{% endblock %}

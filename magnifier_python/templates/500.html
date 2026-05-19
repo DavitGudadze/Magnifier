@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container">
+    <div class="auth-card" style="border-color: var(--alert-red); text-align:center;">
+        <div style="font-size:5rem; font-weight:900; background: linear-gradient(90deg, var(--alert-red), var(--purple)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; line-height:1; margin-bottom:10px;">500</div>
+        <h2 style="color: var(--alert-red); margin-bottom:20px; letter-spacing:4px;">SYSTEM ERROR</h2>
+        <p style="color: var(--text-dim); font-family: 'JetBrains Mono'; font-size: 0.7rem; line-height:1.8; margin-bottom:30px;">
+            AN INTERNAL ERROR OCCURRED.<br>
+            THE SYSTEM ADMINISTRATOR HAS BEEN NOTIFIED.
+        </p>
+        <a href="{{ url_for('index') }}" class="core-btn" style="width: 200px; margin: 0 auto;">← RETURN HOME</a>
+    </div>
+</div>
+{% endblock %}

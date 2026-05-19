@@ -1,0 +1,39 @@
+# Systemd service file for Gunicorn
+# 
+# Installation:
+# 1. Copy to /etc/systemd/system/bioworkflow.service
+# 2. Update paths and user
+# 3. sudo systemctl daemon-reload
+# 4. sudo systemctl enable bioworkflow
+# 5. sudo systemctl start bioworkflow
+
+[Unit]
+Description=Bioinformatics Workflow Platform (Gunicorn)
+After=network.target
+
+[Service]
+Type=notify
+User=www-data
+Group=www-data
+WorkingDirectory=/path/to/bioworkflow
+Environment="PATH=/path/to/bioworkflow/venv/bin"
+ExecStart=/path/to/bioworkflow/venv/bin/gunicorn \
+    --config gunicorn_config.py \
+    wsgi:app
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=mixed
+TimeoutStopSec=5
+PrivateTmp=true
+
+# Restart policy
+Restart=always
+RestartSec=10
+
+# Security
+NoNewPrivileges=true
+PrivateDevices=true
+ProtectSystem=full
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target
