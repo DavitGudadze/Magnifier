@@ -17,10 +17,10 @@ load_dotenv(basedir / '.env')
 
 class Config:
     """Base configuration class with common settings."""
-    
+
     # Flask
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
-    
+
     # Database
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
         f'sqlite:///{basedir / "bioworkflow.db"}'
@@ -29,17 +29,17 @@ class Config:
         'pool_pre_ping': True,
         'pool_recycle': 300,
     }
-    
+
     # File Storage
     STORAGE_ROOT = basedir / 'storage'
     UPLOAD_FOLDER = STORAGE_ROOT / 'uploads'
     INTERMEDIATE_FOLDER = STORAGE_ROOT / 'intermediate'
     RESULTS_FOLDER = STORAGE_ROOT / 'results'
-    
+
     # Create storage directories if they don't exist
     for folder in [UPLOAD_FOLDER, INTERMEDIATE_FOLDER, RESULTS_FOLDER]:
         folder.mkdir(parents=True, exist_ok=True)
-    
+
     # File Upload Settings
     MAX_CONTENT_LENGTH = int(os.environ.get('MAX_CONTENT_LENGTH', 5368709120))  # 5GB
     ALLOWED_EXPRESSION_EXTENSIONS = set(
@@ -48,7 +48,7 @@ class Config:
     ALLOWED_VCF_EXTENSIONS = set(
         os.environ.get('ALLOWED_VCF_EXTENSIONS', '.vcf,.vcf.gz').split(',')
     )
-    
+
     # Session Configuration
     SESSION_COOKIE_SECURE = os.environ.get('SESSION_COOKIE_SECURE', 'False').lower() == 'true'
     SESSION_COOKIE_HTTPONLY = True
@@ -56,18 +56,18 @@ class Config:
     PERMANENT_SESSION_LIFETIME = timedelta(
         seconds=int(os.environ.get('PERMANENT_SESSION_LIFETIME', 86400))
     )
-    
+
     # Security
     WTF_CSRF_ENABLED = False
     WTF_CSRF_TIME_LIMIT = None  # CSRF tokens don't expire
-    
+
     # Logging
     LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')
     LOG_FILE = basedir / 'logs' / 'bioworkflow.log'
-    
+
     # Create logs directory
     LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
-    
+
     # Deployment prefix for shared server (e.g. '/bioworkflow')
     # Must match the path the professor proxies to your socket
     PREFIX = os.environ.get('PREFIX', '')
@@ -81,7 +81,7 @@ class Config:
     SCRIPT_VEP = SCRIPTS_DIR / 'vep_processing.py'
     SCRIPT_JOIN = SCRIPTS_DIR / 'join_results.py'
     SCRIPT_CONTINGENCY = SCRIPTS_DIR / 'generate_contingency.py'
-    
+
     # Python interpreter (can point to conda environment)
     PYTHON_INTERPRETER = os.environ.get('PYTHON_INTERPRETER', 'python3')
 
@@ -98,7 +98,7 @@ class ProductionConfig(Config):
     DEBUG = False
     TESTING = False
     SESSION_COOKIE_SECURE = True
-    
+
     # Override with environment variable or fail
     SECRET_KEY = os.environ.get('SECRET_KEY')
     if not SECRET_KEY or SECRET_KEY == 'dev-secret-key-change-in-production':

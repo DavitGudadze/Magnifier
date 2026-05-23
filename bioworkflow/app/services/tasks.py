@@ -22,7 +22,7 @@ def run_pipeline_task(experiment_id):
         return result
     except Exception as e:
         logger.error(f'Pipeline task failed for experiment {experiment_id}: {str(e)}')
-        experiment = Experiment.query.get(experiment_id)
+        experiment = db.session.get(Experiment, experiment_id)
         if experiment:
             experiment.update_status(Experiment.STATUS_FAILED, error_message=str(e))
             db.session.commit()
@@ -43,9 +43,9 @@ def merge_project_results_task(project_id):
 
 def cleanup_old_intermediates_task():
     """Delete intermediate files from experiments older than 7 days."""
-    from datetime import datetime, timedelta
+    from datetime import datetime, timedelta, timezone
     from app.utils.files import cleanup_experiment_files
-    cutoff_date = datetime.utcnow() - timedelta(days=7)
+    cutoff_date = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=7)
     old_experiments = Experiment.query.filter(
         Experiment.status.in_([Experiment.STATUS_COMPLETED, Experiment.STATUS_FAILED]),
         Experiment.completed_at < cutoff_date

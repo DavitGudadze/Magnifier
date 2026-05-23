@@ -1,0 +1,99 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  # ── Backend (bioworkflow REST API) ─────────────────────────────────────────
+  backend:
+    name: Backend – lint & test
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    defaults:
+      run:
+        working-directory: bioworkflow
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: bioworkflow/requirements_backend.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          # Install without uWSGI (not available on all CI images)
+          grep -v '^uwsgi' requirements_backend.txt | pip install -r /dev/stdin
+          pip install flake8 pytest
+
+      - name: Lint with flake8
+        run: |
+          flake8 app/ config.py wsgi.py \
+            --max-line-length=120 \
+            --extend-ignore=E501 \
+            --exclude=app/__pycache__,migrations
+
+      - name: Run smoke tests
+        working-directory: ${{ github.workspace }}
+        env:
+          FLASK_ENV: testing
+          SECRET_KEY: ci-test-secret-key
+        run: |
+          python -m pytest tests/test_backend_smoke.py -v --tb=short
+
+  # ── Frontend (magnifier_python Flask UI) ───────────────────────────────────
+  frontend:
+    name: Frontend – lint & test
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    defaults:
+      run:
+        working-directory: magnifier_python
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: magnifier_python/requirements_frontend.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements_frontend.txt
+          pip install flake8 pytest
+
+      - name: Lint with flake8
+        run: |
+          flake8 app.py wsgi.py \
+            --max-line-length=120 \
+            --extend-ignore=E501
+
+      - name: Run smoke tests
+        working-directory: ${{ github.workspace }}
+        env:
+          SECRET_KEY: ci-test-secret-key
+          BACKEND_URL: http://127.0.0.1:5000
+          PREFIX: ""
+          GOOGLE_CLIENT_ID: ""
+          GOOGLE_CLIENT_SECRET: ""
+        run: |
+          python -m pytest tests/test_frontend_smoke.py -v --tb=short

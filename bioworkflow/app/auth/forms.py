@@ -13,17 +13,17 @@ from app.models import User
 
 class RegistrationForm(FlaskForm):
     """User registration form."""
-    
+
     username = StringField('Username', validators=[
         DataRequired(),
         Length(min=3, max=80, message='Username must be between 3 and 80 characters')
     ])
-    
+
     email = StringField('Email', validators=[
         DataRequired(),
         Email(message='Invalid email address')
     ])
-    
+
     password = PasswordField('Password', validators=[
         DataRequired(),
         Length(min=8, message='Password must be at least 8 characters long')
@@ -41,18 +41,18 @@ class RegistrationForm(FlaskForm):
             errors.append('at least one special character (e.g. !@#$%)')
         if errors:
             raise ValidationError('Password must contain ' + ', '.join(errors) + '.')
-    
+
     confirm_password = PasswordField('Confirm Password', validators=[
         DataRequired(),
         EqualTo('password', message='Passwords must match')
     ])
-    
+
     def validate_username(self, username):
         """Check if username already exists."""
         user = User.query.filter_by(username=username.data).first()
         if user:
             raise ValidationError('Username already taken. Please choose a different one.')
-    
+
     def validate_email(self, email):
         """Check if email already exists."""
         user = User.query.filter_by(email=email.data).first()
@@ -62,13 +62,13 @@ class RegistrationForm(FlaskForm):
 
 class LoginForm(FlaskForm):
     """User login form."""
-    
+
     username = StringField('Username', validators=[
         DataRequired()
     ])
-    
+
     password = PasswordField('Password', validators=[
         DataRequired()
     ])
-    
+
     remember_me = BooleanField('Remember Me')

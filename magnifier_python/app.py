@@ -9,6 +9,7 @@ load_dotenv(dotenv_path=Path(__file__).parent / ".env")
 
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, Response
 from werkzeug.middleware.proxy_fix import ProxyFix
+import re
 import requests
 import os
 import secrets
@@ -19,6 +20,7 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 app.secret_key = os.environ.get('SECRET_KEY', 'magnifier-secret-key-2024')
 BACKEND_URL = os.environ.get('BACKEND_URL', 'http://127.0.0.1:5000')
 PREFIX = os.environ.get('PREFIX', '')
+
 
 @app.context_processor
 def inject_prefix():
@@ -52,6 +54,7 @@ def random_password(length=24):
 # Cache backend sessions per user to avoid re-login on every request
 _backend_sessions = {}
 
+
 def backend(method, path, **kwargs):
     """Authenticated request to bioworkflow backend with session caching."""
     url = f"{BACKEND_URL}{path}"
@@ -81,9 +84,10 @@ def backend(method, path, **kwargs):
     except requests.exceptions.ConnectionError:
         _backend_sessions.pop(username, None)
         return None
-    except Exception as e:
+    except Exception:
         _backend_sessions.pop(username, None)
         return None
+
 
 def login_or_register_google_user(email, name):
     """
@@ -350,7 +354,6 @@ def profile():
         elif new_pw != confirm_pw:
             error = 'TERMINAL ERROR: NEW KEYS DO NOT MATCH'
         else:
-            import re
             if not re.search(r'[A-Z]', new_pw):
                 error = 'TERMINAL ERROR: PASSWORD NEEDS UPPERCASE LETTER'
             elif not re.search(r'\d', new_pw):
@@ -366,8 +369,7 @@ def profile():
                         error = 'TERMINAL ERROR: CURRENT PASSWORD REQUIRED'
                     else:
                         try:
-                            import requests as req
-                            r = req.post(f"{BACKEND_URL}/auth/login", json={
+                            r = requests.post(f"{BACKEND_URL}/auth/login", json={
                                 'username': session.get('backend_username'),
                                 'password': current_pw
                             }, timeout=30)
@@ -379,8 +381,7 @@ def profile():
                 if not error:
                     # Update password using reset endpoint
                     try:
-                        import requests as req2
-                        s2 = req2.Session()
+                        s2 = requests.Session()
                         s2.post(f"{BACKEND_URL}/auth/login", json={
                             'username': session.get('backend_username'),
                             'password': session.get('backend_password')

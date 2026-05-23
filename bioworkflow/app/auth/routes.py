@@ -16,7 +16,7 @@ auth_bp = Blueprint('auth', __name__)
 def register():
     """
     Register a new user.
-    
+
     Expected JSON:
         {
             "username": "string",
@@ -24,16 +24,16 @@ def register():
             "password": "string",
             "confirm_password": "string"
         }
-    
+
     Returns:
         201: User created successfully
         400: Validation errors
     """
     if current_user.is_authenticated:
         return jsonify({'error': 'Already logged in'}), 400
-    
+
     form = RegistrationForm(data=request.get_json())
-    
+
     if form.validate():
         try:
             # Create new user with hashed password
@@ -42,12 +42,12 @@ def register():
                 email=form.email.data
             )
             user.set_password(form.password.data)
-            
+
             db.session.add(user)
             db.session.commit()
-            
+
             current_app.logger.info(f'New user registered: {user.username}')
-            
+
             return jsonify({
                 'message': 'Registration successful',
                 'user': {
@@ -56,12 +56,12 @@ def register():
                     'email': user.email
                 }
             }), 201
-            
+
         except Exception as e:
             db.session.rollback()
             current_app.logger.error(f'Registration error: {str(e)}')
             return jsonify({'error': 'Registration failed', 'message': str(e)}), 500
-    
+
     # Return validation errors
     return jsonify({'error': 'Validation failed', 'errors': form.errors}), 400
 
@@ -70,36 +70,36 @@ def register():
 def login():
     """
     Authenticate user and create session.
-    
+
     Expected JSON:
         {
             "username": "string",
             "password": "string",
             "remember_me": boolean (optional)
         }
-    
+
     Returns:
         200: Login successful
         401: Invalid credentials
     """
     if current_user.is_authenticated:
         return jsonify({'error': 'Already logged in'}), 400
-    
+
     form = LoginForm(data=request.get_json())
-    
+
     if form.validate():
         user = User.query.filter_by(username=form.username.data).first()
-        
+
         if user and user.check_password(form.password.data):
             if not user.is_active:
                 return jsonify({'error': 'Account is disabled'}), 403
-            
+
             # Log user in
             login_user(user, remember=form.remember_me.data)
             user.update_last_login()
-            
+
             current_app.logger.info(f'User logged in: {user.username}')
-            
+
             return jsonify({
                 'message': 'Login successful',
                 'user': {
@@ -109,9 +109,9 @@ def login():
                     'last_login': user.last_login.isoformat() if user.last_login else None
                 }
             }), 200
-        
+
         return jsonify({'error': 'Invalid username or password'}), 401
-    
+
     return jsonify({'error': 'Validation failed', 'errors': form.errors}), 400
 
 
@@ -119,18 +119,18 @@ def login():
 def logout():
     """
     Logout current user and destroy session.
-    
+
     Returns:
         200: Logout successful
     """
     if not current_user.is_authenticated:
         return jsonify({'error': 'Not logged in'}), 400
-    
+
     username = current_user.username
     logout_user()
-    
+
     current_app.logger.info(f'User logged out: {username}')
-    
+
     return jsonify({'message': 'Logout successful'}), 200
 
 
@@ -138,14 +138,14 @@ def logout():
 def get_current_user():
     """
     Get current authenticated user information.
-    
+
     Returns:
         200: User information
         401: Not authenticated
     """
     if not current_user.is_authenticated:
         return jsonify({'error': 'Not authenticated'}), 401
-    
+
     return jsonify({
         'user': {
             'id': current_user.id,
@@ -175,7 +175,7 @@ def delete_account():
     if not current_user.is_authenticated:
         return jsonify({'error': 'Not authenticated'}), 401
 
-    user = User.query.get(current_user.id)
+    user = db.session.get(User, current_user.id)
     if not user:
         return jsonify({'error': 'User not found'}), 404
 

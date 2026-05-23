@@ -5,12 +5,10 @@ Handles experiment creation, file uploads, pipeline execution, and result downlo
 """
 
 from flask import Blueprint, request, jsonify, current_app, send_file
-from flask_login import current_user
-from werkzeug.utils import secure_filename
-from app.models import db, Experiment, Project
-from app.utils.auth import login_required_api, project_access_required, experiment_access_required
+from app.models import db, Experiment
+from app.utils.auth import project_access_required, experiment_access_required
 from app.utils.files import (
-    save_expression_file, save_vcf_files, 
+    save_expression_file, save_vcf_files,
     get_experiment_paths, cleanup_experiment_files
 )
 from app.services.tasks import run_pipeline_task
@@ -36,28 +34,27 @@ def _get_vcf_files_list(experiment):
         return []
 
 
-
 @experiments_bp.route('/<int:project_id>', methods=['GET'])
 @project_access_required
 def list_experiments(project_id, project):
     """
     List all experiments in a project.
-    
+
     Query parameters:
         status: Filter by status (optional)
-    
+
     Returns:
         200: List of experiments
     """
     query = Experiment.query.filter_by(project_id=project_id)
-    
+
     # Optional status filter
     status_filter = request.args.get('status')
     if status_filter:
         query = query.filter_by(status=status_filter)
-    
+
     experiments = query.order_by(Experiment.created_at.desc()).all()
-    
+
     return jsonify({
         'experiments': [
             {
@@ -85,29 +82,29 @@ def list_experiments(project_id, project):
 def create_experiment(project_id, project):
     """
     Create a new experiment in a project.
-    
+
     Expected JSON:
         {
             "name": "string",
             "description": "string" (optional)
         }
-    
+
     Returns:
         201: Experiment created
         400: Validation error
     """
     data = request.get_json()
-    
+
     if not data or 'name' not in data:
         return jsonify({'error': 'Experiment name is required'}), 400
-    
+
     name = data['name'].strip()
     if not name:
         return jsonify({'error': 'Experiment name cannot be empty'}), 400
-    
+
     if len(name) > 200:
         return jsonify({'error': 'Experiment name too long (max 200 characters)'}), 400
-    
+
     try:
         experiment = Experiment(
             name=name,
@@ -115,14 +112,14 @@ def create_experiment(project_id, project):
             project_id=project_id,
             status=Experiment.STATUS_CREATED
         )
-        
+
         db.session.add(experiment)
         db.session.commit()
-        
+
         current_app.logger.info(
             f'Experiment created: {experiment.id} in project {project_id}'
         )
-        
+
         return jsonify({
             'message': 'Experiment created successfully',
             'experiment': {
@@ -133,7 +130,7 @@ def create_experiment(project_id, project):
                 'created_at': experiment.created_at.isoformat()
             }
         }), 201
-        
+
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f'Experiment creation error: {str(e)}')
@@ -145,7 +142,7 @@ def create_experiment(project_id, project):
 def get_experiment(id, experiment):
     """
     Get detailed information about an experiment.
-    
+
     Returns:
         200: Experiment details
     """
@@ -180,10 +177,10 @@ def get_experiment(id, experiment):
 def upload_expression_file(id, experiment):
     """
     Upload gene expression file for an experiment.
-    
+
     Form data:
         expression_file: File upload
-    
+
     Returns:
         200: File uploaded successfully
         400: Validation error
@@ -192,20 +189,20 @@ def upload_expression_file(id, experiment):
         return jsonify({
             'error': 'Cannot upload files while pipeline is running'
         }), 400
-    
+
     if 'expression_file' not in request.files:
         return jsonify({'error': 'No file provided'}), 400
-    
+
     file = request.files['expression_file']
-    
+
     if file.filename == '':
         return jsonify({'error': 'Empty filename'}), 400
-    
+
     try:
         # Update status
         if experiment.status == Experiment.STATUS_CREATED:
             experiment.update_status(Experiment.STATUS_UPLOADING)
-        
+
         # Save file
         file_info = save_expression_file(
             file,
@@ -213,21 +210,21 @@ def upload_expression_file(id, experiment):
             experiment.project_id,
             experiment.id
         )
-        
+
         # Update experiment
         experiment.has_expression_file = True
         experiment.expression_filename = file_info['filename']
-        
+
         # Check if ready to run
         if experiment.is_ready_to_run():
             experiment.status = Experiment.STATUS_READY
-        
+
         db.session.commit()
-        
+
         current_app.logger.info(
             f'Expression file uploaded for experiment {experiment.id}: {file_info["filename"]}'
         )
-        
+
         return jsonify({
             'message': 'Expression file uploaded successfully',
             'file': {
@@ -240,7 +237,7 @@ def upload_expression_file(id, experiment):
                 'can_run': experiment.can_be_executed()
             }
         }), 200
-        
+
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
     except Exception as e:
@@ -254,10 +251,10 @@ def upload_expression_file(id, experiment):
 def upload_vcf_files(id, experiment):
     """
     Upload VCF files for an experiment.
-    
+
     Form data:
         vcf_files[]: Multiple file uploads
-    
+
     Returns:
         200: Files uploaded successfully
         400: Validation error
@@ -266,20 +263,20 @@ def upload_vcf_files(id, experiment):
         return jsonify({
             'error': 'Cannot upload files while pipeline is running'
         }), 400
-    
+
     if 'vcf_files' not in request.files:
         return jsonify({'error': 'No files provided'}), 400
-    
+
     files = request.files.getlist('vcf_files')
-    
+
     if not files or all(f.filename == '' for f in files):
         return jsonify({'error': 'No valid files provided'}), 400
-    
+
     try:
         # Update status
         if experiment.status == Experiment.STATUS_CREATED:
             experiment.update_status(Experiment.STATUS_UPLOADING)
-        
+
         # Save files
         saved_files = save_vcf_files(
             files,
@@ -287,21 +284,21 @@ def upload_vcf_files(id, experiment):
             experiment.project_id,
             experiment.id
         )
-        
+
         # Update experiment
         experiment.has_vcf_files = True
         experiment.vcf_file_count = len(saved_files)
-        
+
         # Check if ready to run
         if experiment.is_ready_to_run():
             experiment.status = Experiment.STATUS_READY
-        
+
         db.session.commit()
-        
+
         current_app.logger.info(
             f'VCF files uploaded for experiment {experiment.id}: {len(saved_files)} files'
         )
-        
+
         return jsonify({
             'message': f'{len(saved_files)} VCF files uploaded successfully',
             'files': [
@@ -318,7 +315,7 @@ def upload_vcf_files(id, experiment):
                 'can_run': experiment.can_be_executed()
             }
         }), 200
-        
+
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
     except Exception as e:
@@ -347,7 +344,7 @@ def run_experiment(id, experiment):
             'has_expression_file': experiment.has_expression_file,
             'has_vcf_files': experiment.has_vcf_files
         }), 400
-    
+
     try:
         import threading
         import uuid
@@ -393,7 +390,7 @@ def run_experiment(id, experiment):
 def get_experiment_status(id, experiment):
     """
     Get current execution status of an experiment.
-    
+
     Returns:
         200: Status information
     """
@@ -418,17 +415,17 @@ def get_experiment_status(id, experiment):
         'created_at': experiment.created_at.isoformat(),
         'updated_at': experiment.updated_at.isoformat(),
     }
-    
+
     if experiment.started_at:
         response['started_at'] = experiment.started_at.isoformat()
-    
+
     if experiment.completed_at:
         response['completed_at'] = experiment.completed_at.isoformat()
         response['duration_seconds'] = experiment.duration_seconds
-    
+
     if experiment.celery_task_id:
         response['task_id'] = experiment.celery_task_id
-    
+
     return jsonify(response), 200
 
 
@@ -437,7 +434,7 @@ def get_experiment_status(id, experiment):
 def download_result(id, experiment):
     """
     Download the final contingency table for a completed experiment.
-    
+
     Returns:
         200: File download
         404: No result available
@@ -447,7 +444,7 @@ def download_result(id, experiment):
             'error': 'No result available',
             'status': experiment.status
         }), 404
-    
+
     try:
         return send_file(
             experiment.result.contingency_table_path,
@@ -464,7 +461,7 @@ def download_result(id, experiment):
 def delete_experiment(id, experiment):
     """
     Delete an experiment and its associated files.
-    
+
     Returns:
         200: Experiment deleted
     """
@@ -472,24 +469,24 @@ def delete_experiment(id, experiment):
         experiment_name = experiment.name
         user_id = experiment.project.user_id
         project_id = experiment.project_id
-        
+
         # Delete from database
         db.session.delete(experiment)
         db.session.commit()
-        
+
         # Clean up files (optional - can be done async)
         try:
             cleanup_experiment_files(user_id, project_id, id, keep_results=False)
         except Exception as e:
             current_app.logger.warning(f'File cleanup error: {str(e)}')
-        
+
         current_app.logger.info(f'Experiment deleted: {id} ({experiment_name})')
-        
+
         return jsonify({
             'message': 'Experiment deleted successfully',
             'experiment_id': id
         }), 200
-        
+
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f'Experiment deletion error: {str(e)}')
