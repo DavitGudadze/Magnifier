@@ -3,17 +3,21 @@ Magnifier - Python/Flask version
 Full featured: login, register, Google OAuth, delete account, projects, experiments.
 """
 
-from dotenv import load_dotenv
-from pathlib import Path
-load_dotenv(dotenv_path=Path(__file__).parent / ".env")
-
-from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, Response
-from werkzeug.middleware.proxy_fix import ProxyFix
-import re
-import requests
 import os
+import re
 import secrets
 import string
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+load_dotenv(dotenv_path=Path(__file__).parent / ".env")
+
+import requests  # noqa: E402
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, Response  # noqa: E402
+from werkzeug.exceptions import NotFound  # noqa: E402
+from werkzeug.middleware.dispatcher import DispatcherMiddleware  # noqa: E402
+from werkzeug.middleware.proxy_fix import ProxyFix  # noqa: E402
 
 app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
@@ -26,13 +30,14 @@ PREFIX = os.environ.get('PREFIX', '')
 def inject_prefix():
     return dict(PREFIX=PREFIX, backend_online=True)
 
-# ── Google OAuth config (from your original PHP) ────────────────────────────
-GOOGLE_CLIENT_ID     = os.environ.get('GOOGLE_CLIENT_ID', '')
+
+# ── Google OAuth config ──────────────────────────────────────────────────────
+GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', '')
 GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', '')
-GOOGLE_REDIRECT_URI  = os.environ.get('GOOGLE_REDIRECT_URI', 'http://127.0.0.1:8080/auth/google/callback')
-GOOGLE_AUTH_URL      = 'https://accounts.google.com/o/oauth2/v2/auth'
-GOOGLE_TOKEN_URL     = 'https://oauth2.googleapis.com/token'
-GOOGLE_USERINFO_URL  = 'https://www.googleapis.com/oauth2/v3/userinfo'
+GOOGLE_REDIRECT_URI = os.environ.get('GOOGLE_REDIRECT_URI', 'http://127.0.0.1:8080/auth/google/callback')
+GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth'
+GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token'
+GOOGLE_USERINFO_URL = 'https://www.googleapis.com/oauth2/v3/userinfo'
 
 
 def random_password(length=24):
@@ -152,7 +157,7 @@ def login_or_register_google_user(email, name):
     try:
         s = requests.Session()
         resp = s.post(f"{BACKEND_URL}/auth/login",
-                     json={'username': username, 'password': pwd}, timeout=30)
+                      json={'username': username, 'password': pwd}, timeout=30)
         if resp.status_code == 200:
             user = resp.json().get('user', {})
             if 'google_user_passwords' not in session:
@@ -268,7 +273,7 @@ def google_callback():
                                      timeout=30)
         userinfo = userinfo_resp.json()
         email = userinfo.get('email')
-        name  = userinfo.get('name', email)
+        name = userinfo.get('name', email)
     except Exception:
         flash('TERMINAL ERROR: FAILED TO GET USER INFO')
         return redirect(url_for('login'))
@@ -294,10 +299,10 @@ def register():
     error = ''
     if request.method == 'POST':
         full_name = request.form.get('full_name', '').strip()
-        username  = request.form.get('username', '').strip()
-        email     = request.form.get('email', '').strip()
-        password  = request.form.get('password', '')
-        confirm   = request.form.get('confirm', '')
+        username = request.form.get('username', '').strip()
+        email = request.form.get('email', '').strip()
+        password = request.form.get('password', '')
+        confirm = request.form.get('confirm', '')
         if not username or not email or not password:
             error = 'TERMINAL ERROR: ALL FIELDS REQUIRED'
         elif password != confirm:
@@ -471,7 +476,10 @@ def dashboard():
     projects = resp.json().get('projects', []) if resp and resp.status_code == 200 else []
     total_experiments = sum(p.get('experiment_count', 0) for p in projects)
     completed = sum(p.get('status_counts', {}).get('completed', 0) for p in projects)
-    running = sum(p.get('status_counts', {}).get('running', 0) + p.get('status_counts', {}).get('queued', 0) for p in projects)
+    running = sum(
+        p.get('status_counts', {}).get('running', 0) + p.get('status_counts', {}).get('queued', 0)
+        for p in projects
+    )
     return render_template('dashboard.html',
                            user_name=session.get('user_name', 'USER'),
                            user_email=session.get('user_email', ''),
@@ -643,7 +651,9 @@ def upload_expression(experiment_id):
         return jsonify({'error': 'No file provided'}), 400
     resp = backend('POST', f'/experiments/{experiment_id}/upload_expression',
                    files={'expression_file': (f.filename, f.stream, f.content_type)})
-    return (jsonify(resp.json()), resp.status_code) if resp is not None else (jsonify({"error": "Backend unreachable"}), 503)
+    if resp is None:
+        return jsonify({"error": "Backend unreachable"}), 503
+    return jsonify(resp.json()), resp.status_code
 
 
 @app.route('/experiments/<int:experiment_id>/upload_vcf', methods=['POST'])
@@ -655,7 +665,9 @@ def upload_vcf(experiment_id):
         return jsonify({'error': 'No files provided'}), 400
     file_tuples = [('vcf_files', (f.filename, f.stream, f.content_type)) for f in files]
     resp = backend('POST', f'/experiments/{experiment_id}/upload_vcf', files=file_tuples)
-    return (jsonify(resp.json()), resp.status_code) if resp is not None else (jsonify({"error": "Backend unreachable"}), 503)
+    if resp is None:
+        return jsonify({"error": "Backend unreachable"}), 503
+    return jsonify(resp.json()), resp.status_code
 
 
 @app.route('/experiments/<int:experiment_id>/run', methods=['POST'])
@@ -663,7 +675,9 @@ def run_experiment(experiment_id):
     if not session.get('authorized'):
         return jsonify({'error': 'Unauthorized'}), 401
     resp = backend('POST', f'/experiments/{experiment_id}/run')
-    return (jsonify(resp.json()), resp.status_code) if resp is not None else (jsonify({"error": "Backend unreachable"}), 503)
+    if resp is None:
+        return jsonify({"error": "Backend unreachable"}), 503
+    return jsonify(resp.json()), resp.status_code
 
 
 @app.route('/experiments/<int:experiment_id>/status')
@@ -671,7 +685,9 @@ def experiment_status(experiment_id):
     if not session.get('authorized'):
         return jsonify({'error': 'Unauthorized'}), 401
     resp = backend('GET', f'/experiments/{experiment_id}/status')
-    return (jsonify(resp.json()), resp.status_code) if resp is not None else (jsonify({"error": "Backend unreachable"}), 503)
+    if resp is None:
+        return jsonify({"error": "Backend unreachable"}), 503
+    return jsonify(resp.json()), resp.status_code
 
 
 @app.route('/experiments/<int:experiment_id>/download')
@@ -717,9 +733,6 @@ def server_error(e):
 
 
 # ── Deployment (professor's server) ─────────────────────────────────────────
-from werkzeug.middleware.dispatcher import DispatcherMiddleware
-from werkzeug.exceptions import NotFound
-
 hostedApp = Flask(__name__)
 hostedApp.wsgi_app = DispatcherMiddleware(NotFound(), {PREFIX: app}) if PREFIX else app
 

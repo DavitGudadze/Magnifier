@@ -57,11 +57,15 @@ def get_experiment_paths(user_id, project_id, experiment_id):
     expression_dir = base_upload / 'expression'
     vcf_dir = base_upload / 'vcf'
 
-    intermediate_dir = (current_app.config['INTERMEDIATE_FOLDER'] /
-                       str(user_id) / str(project_id) / str(experiment_id))
+    intermediate_dir = (
+        current_app.config['INTERMEDIATE_FOLDER'] /
+        str(user_id) / str(project_id) / str(experiment_id)
+    )
 
-    results_dir = (current_app.config['RESULTS_FOLDER'] /
-                   str(user_id) / str(project_id) / str(experiment_id))
+    results_dir = (
+        current_app.config['RESULTS_FOLDER'] /
+        str(user_id) / str(project_id) / str(experiment_id)
+    )
 
     # Create directories
     for directory in [expression_dir, vcf_dir, intermediate_dir, results_dir]:
@@ -137,7 +141,8 @@ def save_vcf_files(files, user_id, project_id, experiment_id):
 
     for file in files:
         if not allowed_file(file.filename, current_app.config['ALLOWED_VCF_EXTENSIONS']):
-            raise ValueError(f'File type not allowed: {file.filename}. Allowed types: {current_app.config["ALLOWED_VCF_EXTENSIONS"]}')
+            allowed = current_app.config['ALLOWED_VCF_EXTENSIONS']
+            raise ValueError(f'File type not allowed: {file.filename}. Allowed types: {allowed}')
 
         # Secure filename and save
         filename = secure_filename(file.filename)

@@ -71,13 +71,14 @@ class Project(db.Model):
 
     # Timestamps
     created_at = db.Column(db.DateTime, nullable=False, default=_utcnow)
-    updated_at = db.Column(db.DateTime, nullable=False, default=_utcnow,
-                          onupdate=_utcnow)
+    updated_at = db.Column(db.DateTime, nullable=False, default=_utcnow, onupdate=_utcnow)
 
     # Relationships
     owner = db.relationship('User', back_populates='projects')
-    experiments = db.relationship('Experiment', back_populates='project',
-                                 lazy='dynamic', cascade='all, delete-orphan')
+    experiments = db.relationship(
+        'Experiment', back_populates='project',
+        lazy='dynamic', cascade='all, delete-orphan'
+    )
 
     # Indexes for performance
     __table_args__ = (
@@ -120,8 +121,7 @@ class Experiment(db.Model):
     description = db.Column(db.Text)
 
     # Project relationship
-    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'),
-                          nullable=False, index=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=False, index=True)
 
     # Execution status
     status = db.Column(db.String(20), nullable=False, default=STATUS_CREATED, index=True)
@@ -144,13 +144,12 @@ class Experiment(db.Model):
 
     # Timestamps
     created_at = db.Column(db.DateTime, nullable=False, default=_utcnow)
-    updated_at = db.Column(db.DateTime, nullable=False, default=_utcnow,
-                          onupdate=_utcnow)
+    updated_at = db.Column(db.DateTime, nullable=False, default=_utcnow, onupdate=_utcnow)
 
     # Relationships
     project = db.relationship('Project', back_populates='experiments')
     result = db.relationship('Result', back_populates='experiment', uselist=False,
-                            cascade='all, delete-orphan')
+                             cascade='all, delete-orphan')
 
     # Indexes for performance
     __table_args__ = (
@@ -209,8 +208,7 @@ class Result(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
     # Link to experiment
-    experiment_id = db.Column(db.Integer, db.ForeignKey('experiments.id'),
-                             nullable=False, unique=True, index=True)
+    experiment_id = db.Column(db.Integer, db.ForeignKey('experiments.id'), nullable=False, unique=True, index=True)
 
     # Result file information
     contingency_table_path = db.Column(db.String(500), nullable=False)
@@ -244,8 +242,7 @@ class ProjectMergedResult(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
     # Link to project
-    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'),
-                          nullable=False, index=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=False, index=True)
 
     # Merged result file
     merged_table_path = db.Column(db.String(500), nullable=False)

@@ -162,7 +162,10 @@ def register_error_handlers(app):
     @app.errorhandler(413)
     def request_entity_too_large(error):
         """Handle 413 Request Entity Too Large errors."""
-        return jsonify({'error': 'File too large', 'message': 'The uploaded file exceeds the maximum allowed size'}), 413
+        return jsonify({
+            'error': 'File too large',
+            'message': 'The uploaded file exceeds the maximum allowed size',
+        }), 413
 
     @app.errorhandler(500)
     def internal_server_error(error):
